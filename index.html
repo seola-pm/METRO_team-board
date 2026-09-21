@@ -3,8 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#F5F6F3" media="(prefers-color-scheme: light)">
-  <meta name="theme-color" content="#11181F" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#F7EFE4">
   <title>METRO Team Board</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%2322384F'/%3E%3Cpath d='M9 22V10l7 7 7-7v12' fill='none' stroke='%23fff' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
@@ -17,6 +16,9 @@
   <script src="js/app.js" defer></script>
   <style>
     /* 오늘/주간 타임라인 뷰 — 기존 데이터 로딩 로직은 그대로 사용합니다. */
+    :root{color-scheme:light;--bg:#f7efe4;--surface:#fffaf4;--surface-2:#f2e3d5;--ink:#453a33;--ink-2:#66584e;--muted:#83746a;--line:#e6d6c8;--line-2:#d8c2b0;--brand:#755447;--brand-soft:#eedfd2;--ok:#248967;--ok-ink:#17674d;--ok-soft:#dff3e8;--leave:#d27b45;--leave-ink:#985126;--leave-soft:#f9e6d7;--miss:#b66a32;--miss-ink:#82471f;--miss-soft:#fae8d7;--off:#7d756f;--off-ink:#5e5650;--off-soft:#eee8e3;--check:#8670aa;--check-ink:#665188;--check-soft:#eee8f5}
+    html,body{background:#f7efe4!important;color:#453a33!important}
+    .hdr,.side{background:#fffaf4!important;border-color:#e6d6c8!important}
     .gantt-scroll,.week-matrix-wrap{display:block;width:100%;max-width:100%;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;touch-action:pan-x;overscroll-behavior-inline:contain;scrollbar-gutter:stable;border:1px solid var(--line,#dfe4e7);border-radius:14px;background:var(--surface,#fff)}
     .gantt-chart{min-width:860px}
     .gantt-head,.gantt-person{display:grid;grid-template-columns:118px minmax(700px,1fr)}
@@ -29,12 +31,14 @@
     .gantt-person{min-height:56px;border-bottom:1px solid var(--line,#edf0f2)}
     .gantt-person:last-child{border-bottom:0}
     .gantt-person__meta{padding:9px 12px;display:flex;flex-direction:column;justify-content:center;gap:2px}
-    .gantt-person__name{display:block;font-size:14px;font-weight:800;line-height:1.25;color:#17232c!important;opacity:1!important;visibility:visible!important}
+    .gantt-person__name{display:inline-flex;align-items:center;gap:5px;font-size:14px;font-weight:800;line-height:1.25;color:#453a33!important;opacity:1!important;visibility:visible!important}
+    .gantt-person__name.is-on:before{content:"";width:8px;height:8px;border-radius:50%;background:#35b77c;box-shadow:0 0 0 3px #dff3e8;flex:0 0 auto}
+    .live-on{display:inline-flex;align-items:center;align-self:flex-start;margin-top:3px;padding:1px 5px;border-radius:999px;background:#dff3e8;color:#17674d;font-size:9px;font-weight:900;letter-spacing:.04em}
     .gantt-person__team{font-size:11px;color:var(--muted,#687680)}
     .gantt-track{position:relative;margin:7px 0;min-height:42px;background:repeating-linear-gradient(to right,transparent 0,transparent calc(4.1667% - 1px),var(--line,#edf0f2) calc(4.1667% - 1px),var(--line,#edf0f2) 4.1667%)}
     .gantt-bar{position:absolute;top:5px;left:var(--start);width:var(--length);min-width:28px;height:32px;padding:0 10px;border-radius:8px;display:flex;align-items:center;overflow:hidden;white-space:nowrap;font-size:12px;font-weight:800;color:#153b2b;background:#7fdcaf;box-shadow:inset 0 0 0 1px rgba(23,106,71,.08)}
-    .gantt-bar.is-now{background:#43c98a;color:#083923}
-    .gantt-now-line{position:absolute;inset:0 auto 0 var(--now);width:2px;background:#20b977;z-index:2;pointer-events:none;opacity:.8}
+    .gantt-bar.is-now{background:#7fdcaf;color:#153b2b}
+    .gantt-now-line{position:absolute;top:-8px;bottom:-8px;left:var(--now);width:2px;background:#e34848;z-index:5;pointer-events:none;opacity:1;box-shadow:0 0 0 1px rgba(227,72,72,.08)}
     .gantt-legend{display:flex;gap:14px;flex-wrap:wrap;margin:10px 2px 0;font-size:12px;color:var(--muted,#687680)}
     .gantt-legend i{display:inline-block;width:10px;height:10px;margin-right:5px;border-radius:3px;vertical-align:-1px}
     .week-matrix{border-collapse:separate;border-spacing:0;min-width:1050px;width:100%;font-size:12px}
@@ -43,7 +47,7 @@
     .week-matrix thead th{position:sticky;top:0;z-index:4;background:var(--surface-2,#f3f6f6);font-weight:800}
     .week-matrix .member-col{position:sticky;left:0;z-index:3;width:138px;min-width:138px;text-align:left;background:var(--surface,#fff);box-shadow:3px 0 8px rgba(0,0,0,.06)}
     .week-matrix thead .member-col{z-index:5;background:var(--surface-2,#f3f6f6)}
-    .week-member{display:block;font-size:14px;font-weight:800;line-height:1.25;color:#17232c!important;opacity:1!important;visibility:visible!important}
+    .week-member{display:block;font-size:14px;font-weight:800;line-height:1.25;color:#453a33!important;opacity:1!important;visibility:visible!important}
     .week-team{display:block;margin-top:4px;font-size:11px;font-weight:500;color:var(--muted,#687680)}
     .week-day{display:block;font-size:14px}.week-date{display:block;margin-top:3px;font-size:11px;color:var(--muted,#687680)}
     .week-cell{min-width:126px;background:var(--surface,#fff)}
@@ -55,13 +59,20 @@
     .week-guide span{display:inline-flex;align-items:center;gap:5px}.week-guide i{width:10px;height:10px;border-radius:3px}
     #v-month .cal__marks.has-names{display:flex;align-content:flex-start;align-items:flex-start;gap:3px;flex-wrap:wrap;margin-top:5px;overflow:hidden}
     #v-month .cal-leave-name{display:inline-block;max-width:100%;padding:2px 5px;border-radius:4px;background:#a86508;color:#fff3d2;font-size:9px;font-style:normal;font-weight:800;line-height:1.35;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    @media(prefers-color-scheme:dark){.gantt-person__name,.week-member{color:#f1f6f7!important}}
+    .linkhub{display:grid;gap:16px}.linkhub__form{display:grid;grid-template-columns:minmax(130px,.8fr) minmax(220px,1.6fr) auto;gap:9px;padding:14px;border:1px solid var(--line);border-radius:14px;background:var(--surface)}
+    .linkhub__form input{min-width:0;height:42px;padding:0 12px;border:1px solid var(--line-2);border-radius:9px;background:#fff;color:var(--ink);font:inherit;outline:none}.linkhub__form input:focus{border-color:#c88961;box-shadow:0 0 0 3px #f5dfcf}
+    .linkhub__form button{height:42px;padding:0 18px;border:0;border-radius:9px;background:#755447;color:#fff;font-weight:800;cursor:pointer}
+    .linkhub__grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}.linkcard{position:relative;min-height:102px;padding:15px;border:1px solid var(--line);border-radius:13px;background:var(--surface);box-shadow:0 4px 14px rgba(100,70,50,.05)}
+    .linkcard__name{display:block;padding-right:30px;color:var(--ink);font-size:15px;font-weight:850}.linkcard__url{display:block;margin-top:7px;overflow:hidden;color:var(--muted);font-size:11px;text-overflow:ellipsis;white-space:nowrap}.linkcard__go{display:inline-flex;margin-top:12px;color:#9b5f3d;font-size:12px;font-weight:800;text-decoration:none}.linkcard__del{position:absolute;right:9px;top:9px;width:30px;height:30px;border:0;border-radius:8px;background:transparent;color:var(--muted);font-size:18px;cursor:pointer}.linkcard__del:hover{background:#f4e8dd;color:#b34b3e}
+    .linkhub__empty{padding:28px;text-align:center;color:var(--muted);border:1px dashed var(--line-2);border-radius:13px;background:rgba(255,250,244,.55)}
     @media(max-width:720px){
       .gantt-scroll,.week-matrix-wrap{width:calc(100vw - 32px);max-width:calc(100vw - 32px)}
       .gantt-chart{width:900px;min-width:900px}.gantt-head,.gantt-person{grid-template-columns:104px 796px}
       .gantt-person__meta{padding-left:10px}.week-matrix{min-width:1000px}
       .gantt-scroll,.week-matrix-wrap{margin-inline:-4px;border-radius:12px}
       #v-month .cal-leave-name{padding:1px 3px;font-size:8px}
+      .linkhub__form{grid-template-columns:1fr}.linkhub__form button{width:100%}
+      .nav{grid-template-columns:repeat(6,minmax(0,1fr))!important}.nav a{min-width:0;padding-inline:2px!important;font-size:10px}.nav a[data-view="links"] span:last-child{font-size:9px}
     }
   </style>
 </head>
@@ -110,6 +121,7 @@
         <a href="#month" data-view="month"><span class="nav__ic"><svg class="ic" aria-hidden="true"><use href="#i-month"/></svg></span><span>월간</span></a>
         <a href="#meet" data-view="meet"><span class="nav__ic"><svg class="ic" aria-hidden="true"><use href="#i-meet"/></svg></span><span>회의</span></a>
         <a href="#team" data-view="team"><span class="nav__ic"><svg class="ic" aria-hidden="true"><use href="#i-team"/></svg></span><span class="lbl-short">팀</span><span class="lbl-long">팀 명단</span></a>
+        <a href="#links" data-view="links"><span class="nav__ic"><svg class="ic" aria-hidden="true"><use href="#i-link"/></svg></span><span>링크 허브</span></a>
       </nav>
       <div class="side__links" id="sideLinks"></div>
     </aside>
@@ -122,6 +134,7 @@
         <section class="view" id="v-month" aria-label="월간" hidden></section>
         <section class="view" id="v-meet" aria-label="회의" hidden></section>
         <section class="view" id="v-team" aria-label="팀 명단" hidden></section>
+        <section class="view" id="v-links" aria-label="링크 허브" hidden></section>
       </main>
     </div>
   </div>
@@ -157,8 +170,8 @@
       panel.classList.remove('panel');
       panel.innerHTML=`<div class="gantt-scroll"><div class="gantt-chart">
         <div class="gantt-head"><div class="gantt-corner">이름 / 팀</div><div class="gantt-hours">${hourMarks.map(h=>`<span class="gantt-hour" style="left:${h/24*100}%">${h}</span>`).join('')}</div></div>
-        ${people.map(p=>`<div class="gantt-person"><div class="gantt-person__meta"><span class="gantt-person__name">${esc(p.name)}</span><span class="gantt-person__team">${esc(p.team)}</span></div><div class="gantt-track"><i class="gantt-now-line" style="--now:${now/24*100}%"></i>${p.ranges.map(r=>`<span class="gantt-bar${p.now&&now>=r.start&&now<=r.end?' is-now':''}" style="--start:${r.start/24*100}%;--length:${Math.max(.5,r.end-r.start)/24*100}%">${esc(r.label.replace(/:00/g,''))}</span>`).join('')}</div></div>`).join('')}
-      </div></div><div class="gantt-legend"><span><i style="background:#43c98a"></i>현재 작업 가능</span><span><i style="background:#7fdcaf"></i>오늘 작업 가능</span></div>`;
+        ${people.map(p=>`<div class="gantt-person"><div class="gantt-person__meta"><span class="gantt-person__name${p.now?' is-on':''}">${esc(p.name)}</span><span class="gantt-person__team">${esc(p.team)}</span>${p.now?'<span class="live-on">ON · 지금 가능</span>':''}</div><div class="gantt-track"><i class="gantt-now-line" style="--now:${now/24*100}%"></i>${p.ranges.map(r=>`<span class="gantt-bar" style="--start:${r.start/24*100}%;--length:${Math.max(.5,r.end-r.start)/24*100}%">${esc(r.label.replace(/:00/g,''))}</span>`).join('')}</div></div>`).join('')}
+      </div></div><div class="gantt-legend"><span><i style="border-radius:50%;background:#35b77c"></i>지금 작업 가능(ON)</span><span><i style="background:#7fdcaf"></i>오늘 작업 가능 시간</span><span><i style="width:2px;background:#e34848"></i>현재 시각</span></div>`;
       sec.querySelector('.sec__note')?.replaceChildren(document.createTextNode('가로로 밀어 전체 시간 보기'));
     }
 
@@ -235,7 +248,35 @@
         marks.innerHTML=[...new Set(names)].map(name=>`<i class="cal-leave-name">${esc(name)}</i>`).join('');
       });
     }
-    function enhance(){if(busy)return;busy=true;try{makeTodayGantt();makeWeekMatrix();makeMonthNames();}finally{busy=false}}
+    function makeLinkHub(){
+      const root=document.querySelector('#v-links');
+      if(!root || root.dataset.ready) return;
+      root.dataset.ready='1';
+      const storageKey='metro-team-board-links-v1';
+      const defaults=[
+        {name:'출근판 관리자 시트',url:'https://docs.google.com/spreadsheets/d/1Ga7YPgjz1HQy1-el6oi8QxruGht3VpaEWPY5ig3Ukq4/edit'},
+        {name:'작업 가능 시간 입력',url:'https://docs.google.com/forms/d/e/1FAIpQLScIoOoNupD-pgA72hhXg-Lz4nRpBj6dly33ygFfoBDneQ0v7g/viewform'},
+        {name:'휴가·외부 일정 입력',url:'https://docs.google.com/forms/d/e/1FAIpQLSe6T11sDoQKH7q5KqlhPFRLSgvoEIrhNppqYDP3GI3XBCIr4g/viewform'},
+        {name:'METRO 출근판',url:'https://seola-pm.github.io/METRO_team-board/'}
+      ];
+      const load=()=>{try{const v=JSON.parse(localStorage.getItem(storageKey));return Array.isArray(v)?v:defaults}catch{return defaults}};
+      let links=load();
+      const save=()=>localStorage.setItem(storageKey,JSON.stringify(links));
+      root.innerHTML=`<div class="page-head"><div><h1 class="page-title">링크 허브</h1><p class="page-sub">자주 쓰는 METRO 링크를 한곳에 모아 바로 열어요</p></div></div><div class="linkhub"><form class="linkhub__form" id="linkhubForm"><input id="linkName" name="name" aria-label="링크 이름" placeholder="링크 이름" required><input id="linkUrl" name="url" type="url" aria-label="링크 주소" placeholder="https://..." required><button type="submit">링크 추가</button></form><div class="linkhub__grid" id="linkhubGrid"></div></div>`;
+      const grid=root.querySelector('#linkhubGrid');
+      const render=()=>{grid.innerHTML=links.length?links.map((l,i)=>`<article class="linkcard"><button class="linkcard__del" type="button" data-del="${i}" aria-label="${esc(l.name)} 삭제">×</button><strong class="linkcard__name">${esc(l.name)}</strong><span class="linkcard__url">${esc(l.url)}</span><a class="linkcard__go" href="${esc(l.url)}" target="_blank" rel="noopener noreferrer">바로가기 →</a></article>`).join(''):'<p class="linkhub__empty">아직 저장한 링크가 없어요.</p>'};
+      root.querySelector('#linkhubForm').addEventListener('submit',e=>{e.preventDefault();const fd=new FormData(e.currentTarget);const name=String(fd.get('name')||'').trim();let url=String(fd.get('url')||'').trim();if(!/^https?:\/\//i.test(url))url='https://'+url;try{const u=new URL(url);if(!/^https?:$/.test(u.protocol))return;links.push({name,url:u.href});save();render();e.currentTarget.reset()}catch{root.querySelector('#linkUrl').setCustomValidity('올바른 주소를 입력해주세요.');root.querySelector('#linkUrl').reportValidity();root.querySelector('#linkUrl').setCustomValidity('')}});
+      grid.addEventListener('click',e=>{const btn=e.target.closest('[data-del]');if(!btn)return;links.splice(+btn.dataset.del,1);save();render()});
+      render();
+    }
+    function showLinkHub(){
+      document.querySelectorAll('#main > .view').forEach(v=>v.hidden=v.id!=='v-links');
+      document.querySelectorAll('.nav a').forEach(a=>a.classList.toggle('is-active',a.dataset.view==='links'));
+      document.querySelector('#v-links')?.removeAttribute('hidden');
+    }
+    document.addEventListener('click',e=>{const a=e.target.closest('.nav a[data-view="links"]');if(!a)return;e.preventDefault();e.stopImmediatePropagation();history.replaceState(null,'','#links');showLinkHub()},true);
+    window.addEventListener('hashchange',()=>{if(location.hash==='#links')showLinkHub()});
+    function enhance(){if(busy)return;busy=true;try{makeTodayGantt();makeWeekMatrix();makeMonthNames();makeLinkHub();if(location.hash==='#links')showLinkHub()}finally{busy=false}}
     const observer=new MutationObserver(()=>requestAnimationFrame(enhance));
     observer.observe(document.querySelector('#main'),{childList:true,subtree:true});
     enhance();
