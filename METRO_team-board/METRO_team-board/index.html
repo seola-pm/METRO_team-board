@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#F5F6F3" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#11181F" media="(prefers-color-scheme: dark)">
+  <title>METRO Team Board</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%2322384F'/%3E%3Cpath d='M9 22V10l7 7 7-7v12' fill='none' stroke='%23fff' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+  <link rel="stylesheet" href="css/style.css">
+  <script src="config.js" defer></script>
+  <script src="js/core.js" defer></script>
+  <script src="js/data.js" defer></script>
+  <script src="js/views.js" defer></script>
+  <script src="js/app.js" defer></script>
+</head>
+<body>
+  <!-- 아이콘 모음 -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <symbol id="i-today" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+    <symbol id="i-week" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16M15 4v16"/></symbol>
+    <symbol id="i-month" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18M8 14h.01M12 14h.01M16 14h.01M8 17.5h.01M12 17.5h.01"/></symbol>
+    <symbol id="i-meet" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></symbol>
+    <symbol id="i-team" viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></symbol>
+    <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-2.64-6.36L21 8"/><path d="M21 3v5h-5"/></symbol>
+    <symbol id="i-left" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></symbol>
+    <symbol id="i-right" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></symbol>
+    <symbol id="i-ok" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5"/><path d="M8 12.3l2.8 2.8L16.2 9.5"/></symbol>
+    <symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5"/><path d="M9.3 9.2a2.8 2.8 0 0 1 5.4 1c0 1.9-2.8 2.6-2.8 2.6M12 16.8h.01"/></symbol>
+    <symbol id="i-pause" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5"/><path d="M10 15V9M14 15V9"/></symbol>
+    <symbol id="i-alert" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5"/><path d="M12 7.5v5M12 16.5h.01"/></symbol>
+    <symbol id="i-leave" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18M10 14l4 4M14 14l-4 4"/></symbol>
+    <symbol id="i-flag" viewBox="0 0 24 24"><path d="M5 21V4M5 4h11l-2 4 2 4H5"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.6-3.6"/></symbol>
+    <symbol id="i-chev" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></symbol>
+    <symbol id="i-link" viewBox="0 0 24 24"><path d="M14 4h6v6M10 14L20 4M19 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h5"/></symbol>
+    <symbol id="i-cal-plus" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18M12 13.5v5M9.5 16h5"/></symbol>
+    <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5"/><path d="M12 11v5M12 7.5h.01"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+    <symbol id="i-logo" viewBox="0 0 24 24"><path d="M6 18V6l6 6 6-6v12"/></symbol>
+  </svg>
+
+  <a class="skip" href="#main">본문으로 건너뛰기</a>
+
+  <div class="app">
+    <header class="hdr">
+      <div class="hdr__brand"><span class="hdr__mark"><svg class="ic" aria-hidden="true"><use href="#i-logo"/></svg></span><span id="brandName">METRO Team Board</span></div>
+      <div class="hdr__meta">
+        <span class="hdr__date" id="hdrDate"></span>
+        <span class="sync is-loading" id="hdrSync" aria-live="polite">불러오는 중</span>
+      </div>
+      <button class="iconbtn" type="button" id="refreshBtn" aria-label="데이터 새로고침"><svg class="ic" aria-hidden="true"><use href="#i-refresh"/></svg></button>
+    </header>
+
+    <aside class="side">
+      <nav class="nav" aria-label="주요 메뉴">
+        <a href="#today" data-view="today"><span class="nav__ic"><svg class="ic" aria-hidden="true"><use href="#i-today"/></svg></span><span>오늘</span></a>
+        <a href="#week" data-view="week"><span class="nav__ic"><svg class="ic" aria-hidden="true"><use href="#i-week"/></svg></span><span>주간</span></a>
+        <a href="#month" data-view="month"><span class="nav__ic"><svg class="ic" aria-hidden="true"><use href="#i-month"/></svg></span><span>월간</span></a>
+        <a href="#meet" data-view="meet"><span class="nav__ic"><svg class="ic" aria-hidden="true"><use href="#i-meet"/></svg></span><span>회의</span></a>
+        <a href="#team" data-view="team"><span class="nav__ic"><svg class="ic" aria-hidden="true"><use href="#i-team"/></svg></span><span class="lbl-short">팀</span><span class="lbl-long">팀 명단</span></a>
+      </nav>
+      <div class="side__links" id="sideLinks"></div>
+    </aside>
+
+    <div class="main">
+      <div class="alert" id="alert" role="alert" hidden></div>
+      <main id="main" tabindex="-1">
+        <section class="view" id="v-today" aria-label="오늘"></section>
+        <section class="view" id="v-week" aria-label="주간" hidden></section>
+        <section class="view" id="v-month" aria-label="월간" hidden></section>
+        <section class="view" id="v-meet" aria-label="회의" hidden></section>
+        <section class="view" id="v-team" aria-label="팀 명단" hidden></section>
+      </main>
+    </div>
+  </div>
+
+  <noscript><p style="padding:16px">이 페이지는 자바스크립트가 켜져 있어야 보여요.</p></noscript>
+</body>
+</html>
