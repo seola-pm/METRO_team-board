@@ -17,7 +17,7 @@
   <script src="js/app.js" defer></script>
   <style>
     /* 오늘/주간 타임라인 뷰 — 기존 데이터 로딩 로직은 그대로 사용합니다. */
-    .gantt-scroll,.week-matrix-wrap{overflow:auto;-webkit-overflow-scrolling:touch;border:1px solid var(--line,#dfe4e7);border-radius:14px;background:var(--surface,#fff)}
+    .gantt-scroll,.week-matrix-wrap{display:block;width:100%;max-width:100%;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;touch-action:pan-x;overscroll-behavior-inline:contain;scrollbar-gutter:stable;border:1px solid var(--line,#dfe4e7);border-radius:14px;background:var(--surface,#fff)}
     .gantt-chart{min-width:860px}
     .gantt-head,.gantt-person{display:grid;grid-template-columns:118px minmax(700px,1fr)}
     .gantt-head{position:sticky;top:0;z-index:4;background:var(--surface,#fff);border-bottom:1px solid var(--line,#dfe4e7)}
@@ -29,7 +29,7 @@
     .gantt-person{min-height:56px;border-bottom:1px solid var(--line,#edf0f2)}
     .gantt-person:last-child{border-bottom:0}
     .gantt-person__meta{padding:9px 12px;display:flex;flex-direction:column;justify-content:center;gap:2px}
-    .gantt-person__name{font-size:14px;font-weight:800;color:var(--text,#17232c)}
+    .gantt-person__name{display:block;font-size:14px;font-weight:800;line-height:1.25;color:#17232c!important;opacity:1!important;visibility:visible!important}
     .gantt-person__team{font-size:11px;color:var(--muted,#687680)}
     .gantt-track{position:relative;margin:7px 0;min-height:42px;background:repeating-linear-gradient(to right,transparent 0,transparent calc(4.1667% - 1px),var(--line,#edf0f2) calc(4.1667% - 1px),var(--line,#edf0f2) 4.1667%)}
     .gantt-bar{position:absolute;top:5px;left:var(--start);width:var(--length);min-width:28px;height:32px;padding:0 10px;border-radius:8px;display:flex;align-items:center;overflow:hidden;white-space:nowrap;font-size:12px;font-weight:800;color:#153b2b;background:#7fdcaf;box-shadow:inset 0 0 0 1px rgba(23,106,71,.08)}
@@ -43,7 +43,7 @@
     .week-matrix thead th{position:sticky;top:0;z-index:4;background:var(--surface-2,#f3f6f6);font-weight:800}
     .week-matrix .member-col{position:sticky;left:0;z-index:3;width:122px;min-width:122px;text-align:left;background:var(--surface,#fff)}
     .week-matrix thead .member-col{z-index:5;background:var(--surface-2,#f3f6f6)}
-    .week-member{display:block;font-size:13px;font-weight:800;color:var(--text,#17232c)}
+    .week-member{display:block;font-size:13px;font-weight:800;line-height:1.25;color:#17232c!important;opacity:1!important;visibility:visible!important}
     .week-team{display:block;margin-top:2px;font-size:10px;font-weight:500;color:var(--muted,#687680)}
     .week-day{display:block;font-size:13px}.week-date{display:block;margin-top:2px;font-size:10px;color:var(--muted,#687680)}
     .week-cell{min-width:102px;background:var(--surface,#fff)}
@@ -51,8 +51,10 @@
     .week-pill--leave{background:#f5e3bd;color:#77510c}.week-pill--miss{background:transparent;color:var(--muted,#849097)}
     .week-pill--off{background:#eef1f2;color:#68747b}.week-pill--check{background:#e7eef9;color:#46658c}
     .week-today{background:color-mix(in srgb,var(--ok,#2bb978) 8%,var(--surface,#fff))!important}
+    @media(prefers-color-scheme:dark){.gantt-person__name,.week-member{color:#f1f6f7!important}}
     @media(max-width:720px){
-      .gantt-chart{min-width:760px}.gantt-head,.gantt-person{grid-template-columns:96px minmax(640px,1fr)}
+      .gantt-scroll,.week-matrix-wrap{width:calc(100vw - 32px);max-width:calc(100vw - 32px)}
+      .gantt-chart{width:900px;min-width:900px}.gantt-head,.gantt-person{grid-template-columns:104px 796px}
       .gantt-person__meta{padding-left:10px}.week-matrix{min-width:820px}
       .gantt-scroll,.week-matrix-wrap{margin-inline:-4px;border-radius:12px}
     }
