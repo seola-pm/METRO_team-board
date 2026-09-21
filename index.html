@@ -8,12 +8,13 @@
   <meta name="description" content="METRO 팀 작업 가능 시간과 회의를 한곳에서 확인합니다.">
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%23755447'/%3E%3Cpath d='M8 23V9l8 8 8-8v14' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
   <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="fixes.css">
 </head>
 <body>
   <div class="app">
     <header class="topbar">
       <a class="brand" href="#today" aria-label="오늘 화면"><span class="brand-mark">M</span><span>METRO Team Board</span></a>
-      <div class="sync"><span id="todayLabel"></span><button id="refreshBtn" type="button">새로고침</button></div>
+      <div class="sync"><span id="todayLabel"></span><span class="auto-sync">1분마다 자동 갱신</span><button id="refreshBtn" type="button">새로고침</button></div>
     </header>
     <aside class="sidebar">
       <nav id="nav" aria-label="주요 메뉴">

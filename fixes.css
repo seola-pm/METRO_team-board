@@ -1,0 +1,112 @@
+/* 시간별 보조선을 24등분으로 정확히 표시합니다. */
+.tl-hours,
+.tl-track {
+  background-image: linear-gradient(to right, var(--line) 1px, transparent 1px);
+  background-size: calc(100% / 24) 100%;
+  background-position: left top;
+}
+
+.missing {
+  display: inline-block;
+  margin-right: 3px;
+  padding: 2px 5px;
+  border-radius: 999px;
+  background: #f3dfd5;
+  color: #8b5845;
+  font-size: .65rem;
+}
+
+.stat {
+  min-height: 118px;
+}
+
+.status-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 10px;
+}
+
+.status-tags span {
+  padding: 4px 7px;
+  border-radius: 999px;
+  background: var(--paper2);
+  color: var(--ink);
+  font-size: .7rem;
+  font-weight: 800;
+}
+
+.empty-tags {
+  color: var(--muted);
+  font-size: .72rem;
+}
+
+.unlock-card {
+  display: grid;
+  gap: 12px;
+  width: min(420px, 100%);
+  margin: 60px auto;
+  padding: 24px;
+}
+
+.unlock-card p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.unlock-card input {
+  width: 100%;
+  padding: 11px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: #fff;
+}
+
+.custom-link {
+  position: relative;
+  padding: 0;
+}
+
+.custom-link a {
+  display: block;
+  padding: 18px 48px 18px 18px;
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.link-delete {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--paper2);
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.link-manage {
+  margin-top: 14px;
+  padding: 16px;
+}
+
+.link-manage summary {
+  cursor: pointer;
+  font-weight: 850;
+}
+
+.link-manage form {
+  margin-top: 16px;
+}
+
+@media (max-width: 900px) {
+  .stat {
+    min-height: 108px;
+  }
+
+  .auto-sync {
+    display: none;
+  }
+}
