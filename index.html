@@ -7,14 +7,15 @@
   <title>METRO Team Board</title>
   <meta name="description" content="METRO 팀 작업 가능 시간과 회의를 한곳에서 확인합니다.">
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%23755447'/%3E%3Cpath d='M8 23V9l8 8 8-8v14' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css">
-  <link rel="stylesheet" href="fixes.css">
+  <!-- 파일을 고친 뒤에는 ?v= 뒤 글자를 바꿔야 브라우저가 옛날 파일 대신 새 파일을 읽어요 -->
+  <link rel="stylesheet" href="styles.css?v=20260921b">
+  <link rel="stylesheet" href="fixes.css?v=20260921b">
 </head>
 <body>
   <div class="app">
     <header class="topbar">
       <a class="brand" href="#today" aria-label="오늘 화면"><span class="brand-mark">M</span><span>METRO Team Board</span></a>
-      <div class="sync"><span id="todayLabel"></span><span class="auto-sync">1분마다 자동 갱신</span><button id="refreshBtn" type="button">새로고침</button></div>
+      <div class="sync"><span id="todayLabel"></span><button id="syncStatus" class="sync-status" type="button" data-state="loading" aria-live="polite"><span class="sync-word">불러오는 중</span></button><button id="refreshBtn" type="button">새로고침</button></div>
     </header>
     <aside class="sidebar">
       <nav id="nav" aria-label="주요 메뉴">
@@ -31,7 +32,21 @@
       <section id="links" class="view" hidden></section>
     </main>
   </div>
-  <script src="config.js"></script>
-  <script src="app.js"></script>
+
+  <!-- 회의를 누르면 열리는 창: 공지문 다시 보기 · 수정 · 취소 -->
+  <dialog id="meetingDialog" class="sheet-dialog" aria-label="회의 상세"></dialog>
+  <!-- 오른쪽 위 연결 표시를 누르면 열리는 창 -->
+  <dialog id="diagDialog" class="sheet-dialog" aria-label="시트 연결 상태"></dialog>
+  <!-- 관리 비밀번호 입력 창 (입력한 글자가 가려져요) -->
+  <dialog id="passDialog" class="sheet-dialog pass-dialog" aria-label="관리 비밀번호">
+    <form id="passForm">
+      <div class="dlg-head"><div><h2>관리 비밀번호</h2><p id="passMsg"></p></div></div>
+      <div class="dlg-body"><input id="passInput" type="password" autocomplete="current-password" required aria-label="관리 비밀번호"></div>
+      <div class="dlg-foot"><button type="button" class="ghost" data-pass-cancel>취소</button><span class="grow"></span><button type="submit" class="primary">확인</button></div>
+    </form>
+  </dialog>
+
+  <script src="config.js?v=20260921b"></script>
+  <script src="app.js?v=20260921b"></script>
 </body>
 </html>
