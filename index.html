@@ -95,11 +95,18 @@
 .pill.off { background: #eee8e3; color: var(--muted); }
 .pill.missing { background: #fff; color: #8b5845; box-shadow: inset 0 0 0 1.5px #d9a898; }
 .pill.check { background: var(--purple); color: #5d4a78; }
+.pill.long { background: #eadfd6; color: #6b5448; font-weight: 700; }
+.pill.long.wide { display: inline-block; padding: 6px 14px; }
+.long-row td { background: #faf6f2; }
+.long-row td:first-child { background: #faf6f2; }
 
 /* ── 달력 ── */
 .calendar { grid-template-columns: repeat(7, minmax(0, 1fr)); }
 .day { min-width: 0; }
 .event small { font-weight: 600; opacity: .8; }
+.event.long { background: #eadfd6; color: #6b5448; }
+.long-strip { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; margin: 12px 12px 0; padding: 9px 12px; border-radius: 10px; background: #f6efe9; color: #6b5448; font-size: .82rem; }
+.long-strip b { font-weight: 850; }
 .event.leave.part { background: repeating-linear-gradient(135deg, #f6e0c8 0 5px, #fbefe3 5px 10px); }
 button.event { width: 100%; border: 0; font-family: inherit; text-align: left; cursor: pointer; }
 button.event.meeting:hover { background: #dccbd1; }
@@ -230,6 +237,17 @@ button.event.meeting:hover { background: #dccbd1; }
 b.missing, b.until { display: inline-block; margin-right: 3px; padding: 2px 5px; border-radius: 999px; font-size: .65rem; }
 b.missing { background: #fff; color: #8b5845; box-shadow: inset 0 0 0 1.2px #d9a898; }
 b.until { background: var(--paper2); color: var(--muted); }
+.team-group .section-title small { color: var(--muted); font-size: .8rem; font-weight: 600; }
+.person .lp-name { display: flex; justify-content: space-between; gap: 8px; }
+.person.long-person { display: grid; gap: 5px; }
+.long-info { display: flex; flex-wrap: wrap; gap: 3px 8px; padding: 6px 8px; border-radius: 8px; background: #f6efe9; color: #6b5448; font-size: .75rem; }
+.long-info b { font-weight: 850; }
+.long-info .li-why { font-weight: 800; }
+.long-info .li-left { padding: 0 6px; border-radius: 999px; background: #eadfd6; font-weight: 800; }
+.long-info.soon { background: #fff; box-shadow: inset 0 0 0 1.5px #e3d6cb; }
+.status-tags .k-soon { background: #fff; color: #6b5448; box-shadow: inset 0 0 0 1.5px #d8c8bb; }
+.soon-tags { align-items: center; margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--line); }
+.soon-tags em { color: var(--muted); font-size: .7rem; font-style: normal; font-weight: 800; }
 .unlock-card { display: grid; gap: 12px; width: min(420px, 100%); margin: 60px auto; padding: 24px; }
 .unlock-card p { margin: 0; color: var(--muted); }
 .unlock-card input { width: 100%; padding: 11px; border: 1px solid var(--line); border-radius: 9px; background: #fff; }
@@ -320,7 +338,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 (() => {
   'use strict';
 
-  const VERSION = '2026-09-21-5';
+  const VERSION = '2026-09-21-7';
   const C = window.METRO_CONFIG || {};
   const MAIN_URL = String(C.API_URL || '').trim();
   const ADMIN_URL = String(C.ADMIN_API_URL || '').trim();
@@ -357,6 +375,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
     renderedDay: '',
     month: monthStart(new Date()),
     meetMonth: monthStart(new Date()),
+    weekStart: weekStartOf(new Date()),
     adminUnlocked: session.get('metroAdminUnlocked') === '1',
     adminPass: '',
     meetDraft: null,
@@ -378,6 +397,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   function keyToDate(k) { const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(k || ''); return m ? new Date(+m[1], +m[2] - 1, +m[3]) : null; }
   function addDays(d, n) { const x = new Date(d); x.setDate(x.getDate() + n); return x; }
   function monthStart(d) { return new Date(d.getFullYear(), d.getMonth(), 1); }
+  function weekStartOf(d) { const x = new Date(d.getFullYear(), d.getMonth(), d.getDate()); return addDays(x, -x.getDay()); }
   function daysBetween(a, b) { return Math.round((keyToDate(b) - keyToDate(a)) / 864e5); }
   function minOf(d) { return d.getHours() * 60 + d.getMinutes(); }
   function fmtM(n) { return `${pad(Math.floor(n / 60))}:${pad(n % 60)}`; }
@@ -693,10 +713,22 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   function personByName(n) { return state.data.team.find(p => p.key === nameKey(n)); }
 
   // 하루 상태: 작업 가능 / 휴가·개인 일정 / 작업 불가 / 폼 미제출 / 일정별 확인
+  // 30일 이상 쉬는 일정(군복무 등)은 매일 표시하지 않고 '장기 OFF'로 따로 다뤄요
+  function isLongLeave(l) { return l.kind === 'full' && daysBetween(l.start, l.end) + 1 >= LONG_LEAVE_DAYS; }
+  function longLabel(l) { return l.memo || '장기 OFF'; }
+  // 아직 시작 안 한 장기 OFF (가장 가까운 것)
+  function upcomingLongLeave(p, date) {
+    const k = dateKey(date);
+    return (state.idx.leaves.get(p.key) || []).filter(l => isLongLeave(l) && l.start > k).sort((a, b) => a.start.localeCompare(b.start))[0];
+  }
+  // 복귀하는 날(마지막 날 다음 날)까지 남은 날
+  function daysToReturn(l, date) { return daysBetween(dateKey(date), l.end) + 1; }
+  function dayLabel(k, date) { const d = keyToDate(k); return d.getFullYear() === date.getFullYear() ? `${d.getMonth() + 1}/${d.getDate()}` : fmtKey(k); }
+
   function dayStatus(p, date) {
     const ls = leavesOn(p.key, dateKey(date));
     const full = ls.find(l => l.kind === 'full');
-    if (full) return { kind: 'leave', leave: full };
+    if (full) return { kind: isLongLeave(full) ? 'long' : 'leave', leave: full };
     const ranges = rangesFor(p.key, date);
     const partials = ls.filter(l => l.kind === 'partial' || l.kind === 'alt' || l.kind === 'note');
     if (ranges.length) return { kind: 'work', ranges, partials };
@@ -727,7 +759,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   }
   const GRID = `<div class="tl-grid" aria-hidden="true">${Array.from({ length: 23 }, (_, i) => `<i${(i + 1) % 6 === 0 ? ' class="major"' : ''} style="left:${(i + 1) / 24 * 100}%"></i>`).join('')}</div>`;
   const LEGEND = `<div class="legend" aria-label="표시 구분">${[
-    ['work', '작업 가능'], ['part', '일부 시간 빠짐'], ['leave', '휴가·개인 일정'], ['off', '작업 불가'], ['missing', '폼 미제출'], ['check', '일정별 확인'],
+    ['work', '작업 가능'], ['part', '일부 시간 빠짐'], ['leave', '휴가·개인 일정'], ['long', '장기 OFF'], ['off', '작업 불가'], ['missing', '폼 미제출'], ['check', '일정별 확인'],
   ].map(([k, t]) => `<span><i class="lg lg-${k}"></i>${t}</span>`).join('')}</div>`;
 
   function monthNav(id, base) {
@@ -745,14 +777,19 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
     for (let i = 0; i < first; i++) cells.push('<div class="day blank"></div>');
     for (let d = 1; d <= last; d++) {
       const k = dateKey(new Date(y, m, d));
-      const leaves = state.data.leaves.filter(l => !leftKeys.has(l.key) && k >= l.start && k <= l.end);
+      const leaves = state.data.leaves.filter(l => !leftKeys.has(l.key) && !isLongLeave(l) && k >= l.start && k <= l.end);
+      const longs = state.data.leaves.filter(l => !leftKeys.has(l.key) && isLongLeave(l) && (k === l.start || k === l.end));
       const meetings = state.data.meetings.filter(mt => mt.date === k);
       cells.push(`<div class="day${k === today ? ' today' : ''}"><span class="day-num">${d}</span>`
+        + longs.map(l => `<span class="event long" title="${esc(leaveTip(l))}">${esc(l.name)}<small> ${esc(longLabel(l))} ${k === l.start ? '시작' : '마지막 날'}</small></span>`).join('')
         + leaves.map(l => `<span class="event leave${l.kind === 'full' ? '' : ' part'}" title="${esc(leaveTip(l))}">${esc(l.name)}<small> ${esc(l.kind === 'full' ? leaveLabel(l) : rangeText(l.ranges) || leaveLabel(l))}</small></span>`).join('')
         + meetings.map(mt => `<button type="button" class="event meeting" data-meeting="${meetingIndex(mt)}" title="${esc(mt.title)} — 눌러서 공지문 보기">${fmtM(mt.start)} ${esc(mt.title)}</button>`).join('')
         + '</div>');
     }
-    return `<div class="calendar">${DAYS.map(x => `<span class="dow">${x}</span>`).join('')}${cells.join('')}</div>`;
+    const mFirst = dateKey(new Date(y, m, 1)), mLast = dateKey(new Date(y, m, last));
+    const longNow = state.data.leaves.filter(l => !leftKeys.has(l.key) && isLongLeave(l) && l.start <= mLast && l.end >= mFirst);
+    const strip = longNow.length ? `<div class="long-strip"><i class="lg lg-long"></i><b>이 달 장기 OFF</b>${longNow.map(l => `<span>${esc(l.name)} · ${esc(longLabel(l))} (${esc(fmtKey(l.start))} ~ ${esc(fmtKey(l.end))})</span>`).join('')}</div>` : '';
+    return `${strip}<div class="calendar">${DAYS.map(x => `<span class="dow">${x}</span>`).join('')}${cells.join('')}</div>`;
   }
 
   /* ───────── 오늘 ───────── */
@@ -762,6 +799,14 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
     return `<div class="card stat stat-${kind}"><b>${items.length}</b><span><i class="lg lg-${kind}"></i>${label}</span>${items.length ? `<div class="status-tags">${items.join('')}</div>` : `<div class="status-tags empty-tags">${empty}</div>`}</div>`;
   }
 
+  function longCard(longOff, now) {
+    const cur = longOff.map(p => { const l = longLeaveOn(p, now); return chip(p, 'long', l ? `${longLabel(l)} · ${fmtKey(l.end)}까지` : '종료일 미정'); });
+    const soon = boardPeople().map(p => ({ p, l: upcomingLongLeave(p, now) })).filter(x => x.l && daysBetween(dateKey(now), x.l.start) <= 30)
+      .map(({ p, l }) => chip(p, 'soon', `${dayLabel(l.start, now)}부터 ${longLabel(l)}`));
+    const tags = cur.length ? `<div class="status-tags">${cur.join('')}</div>` : '<div class="status-tags empty-tags">없음</div>';
+    return `<div class="card stat stat-long"><b>${longOff.length}</b><span><i class="lg lg-long"></i>장기 OFF</span>${tags}${soon.length ? `<div class="status-tags soon-tags"><em>곧 시작</em>${soon.join('')}</div>` : ''}</div>`;
+  }
+
   function renderToday() {
     const root = $('#today');
     const head = header('오늘 작업 가능', '지금 함께 작업할 수 있는 사람과 오늘 쉬는 이유까지 한눈에 확인합니다');
@@ -769,7 +814,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
     const now = new Date(), nm = minOf(now), pct = nm / 1440 * 100;
     const longOff = longOffPeople(now);
     const longKeys = new Set(longOff.map(p => p.key));
-    const b = { work: [], leave: [], off: [], missing: [], check: [] };
+    const b = { work: [], leave: [], long: [], off: [], missing: [], check: [] };
     boardPeople().forEach(p => { if (!longKeys.has(p.key)) { const st = dayStatus(p, now); b[st.kind].push({ p, st }); } });
     const onNow = b.work.filter(x => isAvailable(x.p.key, now, nm, nm + 1));
     const until = l => (l.end > dateKey(now) ? ` ~${fmtShort(l.end)}` : '');
@@ -780,7 +825,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
       + statCard('off', '오늘 작업 불가', b.off.map(x => chip(x.p, 'off')));
     const cards2 = statCard('missing', '스케줄 폼 미제출', b.missing.map(x => chip(x.p, 'missing')))
       + statCard('check', '일정별 확인', b.check.map(x => chip(x.p, 'check')))
-      + statCard('long', '장기 OFF', longOff.map(p => { const l = longLeaveOn(p, now); return chip(p, 'long', l ? `${leaveLabel(l)} ~${fmtKey(l.end)}` : ''); }));
+      + longCard(longOff, now);
 
     const hours = Array.from({ length: 25 }, (_, h) => `<span class="hour${h === 0 ? ' first' : h === 24 ? ' last' : ''}" style="left:${h / 24 * 100}%">${pad(h)}</span>`).join('');
     const bar = (r, cls, text, tip) => `<span class="bar${cls}" style="--l:${r.start / 1440 * 100}%;--w:${(Math.min(r.end, 1440) - r.start) / 1440 * 100}%" title="${esc(tip)}">${esc(text)}</span>`;
@@ -799,12 +844,17 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 
   /* ───────── 이번 주 ───────── */
 
-  function weekDates() { const n = new Date(), sun = addDays(n, -n.getDay()); return Array.from({ length: 7 }, (_, i) => addDays(sun, i)); }
+  function weekDates() { return Array.from({ length: 7 }, (_, i) => addDays(state.weekStart, i)); }
+  function weekNav() {
+    const same = state.weekStart.getTime() === weekStartOf(new Date()).getTime();
+    return `<div class="month-nav"><button type="button" class="ghost" data-cal="week" data-step="-1" aria-label="이전 주">‹</button>${same ? '' : '<button type="button" class="ghost" data-cal="week" data-step="0">이번 주로</button>'}<button type="button" class="ghost" data-cal="week" data-step="1" aria-label="다음 주">›</button></div>`;
+  }
 
   function cellHtml(st) {
     const parts = (st.partials || []).map(l => `<span class="pill part" title="${esc(leaveTip(l))}">${esc(leaveLabel(l))}${l.kind === 'partial' && l.ranges.length ? `<small>${esc(rangeText(l.ranges))}</small>` : ''}</span>`).join('');
     switch (st.kind) {
       case 'leave': return `<span class="pill leave" title="${esc(leaveTip(st.leave))}">${esc(leaveLabel(st.leave))}</span>`;
+      case 'long': return `<span class="pill long" title="${esc(leaveTip(st.leave))}">장기 OFF</span>`;
       case 'work': return st.ranges.map(r => `<span class="pill">${fmtM(r.start)}–${fmtM(r.end)}</span>`).join('') + parts;
       case 'check': return '<span class="pill check">일정별 확인</span>' + parts;
       case 'missing': return '<span class="pill missing">폼 미제출</span>' + parts;
@@ -814,12 +864,24 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 
   function renderWeek() {
     const root = $('#week');
-    const head = header('이번 주', '이름을 고정하고 요일별 가능 시간과 쉬는 이유를 한눈에 확인합니다');
-    if (!state.hasData) { root.innerHTML = head + placeholder(); return; }
     const ds = weekDates(), today = dateKey(new Date());
+    const same = state.weekStart.getTime() === weekStartOf(new Date()).getTime();
+    const range = `${ds[0].getMonth() + 1}월 ${ds[0].getDate()}일 – ${ds[6].getMonth() + 1}월 ${ds[6].getDate()}일`;
+    const head = header(same ? '이번 주' : range, `${same ? range + ' · ' : ''}요일별 가능 시간과 쉬는 이유를 한눈에 확인합니다`, weekNav());
+    if (!state.hasData) { root.innerHTML = head + placeholder(); return; }
     const cls = d => (dateKey(d) === today ? ' class="today"' : '');
-    const rows = boardPeople().map(p => `<tr><td><strong>${esc(p.name)}</strong><br><small>${esc(p.team)}</small></td>${ds.map(d => `<td${cls(d)}>${cellHtml(dayStatus(p, d))}</td>`).join('')}</tr>`).join('');
-    root.innerHTML = head + LEGEND + `<div class="card scroll"><table class="week-grid"><thead><tr><th>이름</th>${ds.map(d => `<th${cls(d)}>${DAYS[d.getDay()]}<br><small>${d.getMonth() + 1}/${d.getDate()}</small></th>`).join('')}</tr></thead><tbody>${rows || '<tr><td colspan="8" class="empty">표시할 팀원이 없어요.</td></tr>'}</tbody></table></div>`;
+    const nameCell = p => `<td><strong>${esc(p.name)}</strong><br><small>${esc(p.team)}</small></td>`;
+    const rows = [], longRows = [];
+    boardPeople().forEach(p => {
+      const sts = ds.map(d => dayStatus(p, d));
+      // 한 주 내내 장기 OFF인 사람은 한 줄로 줄여서 맨 아래에 모아요
+      if (sts.every(st => st.kind === 'long')) {
+        const l = sts[0].leave;
+        longRows.push(`<tr class="long-row">${nameCell(p)}<td colspan="7"><span class="pill long wide">장기 OFF · ${esc(longLabel(l))} · ${esc(fmtKey(l.start))} ~ ${esc(fmtKey(l.end))}</span></td></tr>`);
+      } else rows.push(`<tr>${nameCell(p)}${sts.map((st, i) => `<td${cls(ds[i])}>${cellHtml(st)}</td>`).join('')}</tr>`);
+    });
+    state.data.team.filter(p => baseKind(p) === 'long').forEach(p => longRows.push(`<tr class="long-row">${nameCell(p)}<td colspan="7"><span class="pill long wide">장기 OFF (명단 상태)</span></td></tr>`));
+    root.innerHTML = head + LEGEND + `<div class="card scroll"><table class="week-grid"><thead><tr><th>이름</th>${ds.map(d => `<th${cls(d)}>${DAYS[d.getDay()]}<br><small>${d.getMonth() + 1}/${d.getDate()}</small></th>`).join('')}</tr></thead><tbody>${rows.join('') + longRows.join('') || '<tr><td colspan="8" class="empty">표시할 팀원이 없어요.</td></tr>'}</tbody></table></div>`;
   }
 
   /* ───────── 이번 달 ───────── */
@@ -1216,15 +1278,22 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
       ['빠진 멤버', p => baseKind(p) === 'left'],
     ];
     const row = p => {
+      if (longOff.has(p.key)) {
+        const ll = longLeaveOn(p, now);
+        const info = ll
+          ? `<span class="li-why">${esc(longLabel(ll))}</span><span>${esc(fmtKey(ll.start))} ~ <b>${esc(fmtKey(ll.end))}</b></span><span class="li-left">복귀까지 ${daysToReturn(ll, now)}일</span>`
+          : '<span>종료일 미정 · 명단 상태가 "장기 OFF"예요</span>';
+        return `<div class="person long-person"><div class="lp-name"><strong>${esc(p.name)}</strong><small>${esc(p.team)}</small></div><div class="long-info">${info}</div></div>`;
+      }
       const badges = [];
-      if (isMissing(p) && !longOff.has(p.key)) badges.push('<b class="missing">폼 미제출</b>');
+      if (isMissing(p)) badges.push('<b class="missing">폼 미제출</b>');
       if (p.unlisted) badges.push('<b class="missing">명단에 없음</b>');
-      const ll = longLeaveOn(p, now);
-      if (ll) badges.push(`<b class="until">~${esc(fmtKey(ll.end))}</b>`);
-      return `<div class="person"><strong>${esc(p.name)}</strong><small>${badges.join(' ')} ${esc(p.team)}</small></div>`;
+      const up = baseKind(p) !== 'left' ? upcomingLongLeave(p, now) : null;
+      const soon = up ? `<div class="long-info soon"><span>${esc(dayLabel(up.start, now))}부터 장기 OFF 예정</span><span>${esc(longLabel(up))} · ${esc(fmtKey(up.end))}까지</span></div>` : '';
+      return `<div class="person${soon ? ' long-person' : ''}"><div class="lp-name"><strong>${esc(p.name)}</strong><small>${badges.join(' ')} ${esc(p.team)}</small></div>${soon}</div>`;
     };
-    root.innerHTML = header('팀 명단', '현재 팀 상태와 일정 확인 방법을 구분해 확인합니다', lock)
-      + `<div class="team-groups">${groups.map(([name, fn]) => `<section class="card team-group"><h2 class="section-title">${name}</h2>${state.data.team.filter(fn).map(row).join('') || '<p class="empty">해당 인원이 없어요.</p>'}</section>`).join('')}</div>`;
+    root.innerHTML = header('팀 명단', '현재 팀 상태와 일정 확인 방법을 구분해 확인합니다. 30일 이상 쉬는 일정은 시작일에 자동으로 장기 OFF로 옮겨져요.', lock)
+      + `<div class="team-groups">${groups.map(([name, fn]) => { const list = state.data.team.filter(fn); return `<section class="card team-group"><h2 class="section-title">${name} <small>${list.length}명</small></h2>${list.map(row).join('') || '<p class="empty">해당 인원이 없어요.</p>'}</section>`; }).join('')}</div>`;
   }
 
   async function unlock() {
@@ -1619,6 +1688,12 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
       $$('.picker[open]').forEach(p => { if (!p.contains(t)) p.open = false; });
 
       const nav = t.closest('[data-cal]');
+      if (nav && nav.dataset.cal === 'week') {
+        const step = +nav.dataset.step;
+        state.weekStart = step === 0 ? weekStartOf(new Date()) : addDays(state.weekStart, step * 7);
+        renderWeek();
+        return;
+      }
       if (nav) {
         const k = nav.dataset.cal === 'meet' ? 'meetMonth' : 'month';
         const step = +nav.dataset.step;
