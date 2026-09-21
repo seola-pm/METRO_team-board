@@ -7,7 +7,7 @@
 (() => {
   'use strict';
 
-  const VERSION = '2026-09-21-2';
+  const VERSION = '2026-09-21-3';
   const C = window.METRO_CONFIG || {};
   const MAIN_URL = String(C.API_URL || '').trim();
   const ADMIN_URL = String(C.ADMIN_API_URL || '').trim();
@@ -51,6 +51,9 @@
     dlg: null,
     linkFormOpen: false,
     linkDraft: null,
+    features: {},          // 관리용 연결에서 켜진 기능 (디스코드 공지, 구글 캘린더)
+    notifyDiscord: true,   // 확정·수정·취소할 때 디스코드에도 알릴지
+    showAllCand: false,
   };
 
   /* ───────── 날짜·시간 도우미 ───────── */
@@ -321,6 +324,7 @@
     state.data = data;
     state.idx = buildIndex(data);
     state.cache = new Map();
+    state.features = (a && a.features) || {};
   }
 
   /* ───────── 누가 언제 가능한지 계산 ───────── */
@@ -622,21 +626,45 @@
     if (dayEnd - dayStart < duration) return showNotice('하루 시작~종료 시간 사이가 회의 길이보다 짧아요.', 'error');
     hideNotice();
     $('#mtPicker').open = false;
-    // 일정별 확인·미제출 인원은 계산할 수 없으니 따로 '개별 확인'으로 보여줘요
-    const pending = d.names.filter(nm => { const p = personByName(nm); return !p || baseKind(p) === 'check' || !hasSchedule(p); });
-    const scheduled = d.names.filter(nm => !pending.includes(nm));
     const list = [];
     for (let day = new Date(from); day <= to; day = addDays(day, 1)) {
       for (let s = dayStart; s + duration <= dayEnd; s += step) {
         if (meetingOverlap(day, s, s + duration)) continue;
-        const available = scheduled.filter(nm => isAvailable(nameKey(nm), day, s, s + duration));
-        if (available.length || !scheduled.length) list.push({ title: d.title.trim() || '회의', date: dateKey(day), start: s, end: s + duration, members: d.names, available, pending, scheduledCount: scheduled.length, place: d.place.trim() });
+        const who = slotPeople(d.names, day, s, s + duration);
+        if (who.ok.length || !who.checkable) list.push({ title: d.title.trim() || '회의', date: dateKey(day), start: s, end: s + duration, members: d.names, place: d.place.trim(), ...who });
       }
     }
-    list.sort((a, b) => b.available.length - a.available.length || (a.date + pad(a.start)).localeCompare(b.date + pad(b.start)));
+    list.sort((a, b) => b.ok.length - a.ok.length || (a.date + pad(a.start)).localeCompare(b.date + pad(b.start)));
     state.meetResult = list;
+    state.showAllCand = false;
     renderCandidates();
     $('#candidates').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  // 한 시간대에 참여 인원 한 명 한 명이 되는지, 안 되면 왜 안 되는지
+  function slotPeople(names, day, s, e) {
+    const k = dateKey(day);
+    const ok = [], no = [], unknown = [];
+    names.forEach(nm => {
+      const p = personByName(nm);
+      if (!p) { unknown.push({ name: nm, why: '명단에 없음' }); return; }
+      const ls = leavesOn(p.key, k);
+      const full = ls.find(l => l.kind === 'full');
+      if (full) { no.push({ name: nm, why: leaveLabel(full), kind: 'leave' }); return; }
+      if (isAvailable(p.key, day, s, e)) { ok.push({ name: nm }); return; }
+      if (baseKind(p) === 'check') { unknown.push({ name: nm, why: '일정별 확인' }); return; }
+      if (!hasSchedule(p)) { unknown.push({ name: nm, why: '폼 미제출' }); return; }
+      const part = ls.find(l => l.kind === 'partial' && l.ranges.some(r => r.start < e && r.end > s));
+      if (part) { no.push({ name: nm, why: leaveLabel(part), kind: 'leave' }); return; }
+      const r = rangesFor(p.key, day);
+      no.push({ name: nm, why: r.length ? `${rangeText(r)}만 가능` : '작업 불가', kind: 'off' });
+    });
+    return { ok, no, unknown, checkable: ok.length + no.length };
+  }
+
+  function whoRow(label, cls, list) {
+    if (!list.length) return '';
+    return `<div class="cand-row"><span class="cand-label ${cls}">${label} ${list.length}</span><div class="cand-chips">${list.map(x => `<span class="${cls}${x.kind ? ' ' + x.kind : ''}">${esc(x.name)}${x.why ? `<small>${esc(x.why)}</small>` : ''}</span>`).join('')}</div></div>`;
   }
 
   function renderCandidates() {
@@ -645,11 +673,23 @@
     const list = state.meetResult;
     if (!list) { box.innerHTML = ''; return; }
     if (!list.length) { box.innerHTML = '<div class="card empty">선택한 조건에서 가능한 시간이 없어요. 기간이나 시간을 넓혀보세요.</div>'; return; }
-    box.innerHTML = `<h2 class="section-title">후보 시간 <small>(${list.length > 30 ? `${list.length}개 중 상위 30개` : `${list.length}개`})</small></h2><div class="candidate-list">` + list.slice(0, 30).map((x, i) => {
-      const fixed = x.scheduledCount ? (x.available.length === x.scheduledCount ? '등록 스케줄 기준 전원 가능' : `${x.scheduledCount}명 중 ${x.available.length}명 가능`) : '등록 스케줄 없음';
-      const check = x.pending.length ? ` · 개별 확인: ${esc(x.pending.join(', '))}` : '';
-      return `<article class="candidate"><div><strong>${esc(fmtDate(keyToDate(x.date)))} ${fmtM(x.start)}–${fmtM(x.end)}</strong><small>${fixed}${check}${x.available.length ? ` · ${esc(x.available.join(', '))}` : ''}</small></div><button class="primary" data-fix="${i}" type="button">이 시간 확정</button></article>`;
-    }).join('') + '</div>';
+    const shown = list.slice(0, state.showAllCand ? 30 : 8);
+    const f = state.features;
+    const opts = f.discord
+      ? `<label class="notify-opt"><input type="checkbox" data-notify${state.notifyDiscord ? ' checked' : ''}> 확정하면 디스코드에 공지 올리기</label>`
+      : '';
+    const hint = f.discord && f.calendar ? '확정하면 구글 캘린더에도 자동으로 추가돼요.'
+      : f.calendar ? '확정하면 구글 캘린더에도 자동으로 추가돼요. 디스코드 자동 공지는 관리용 Apps Script에 웹후크 주소를 넣으면 켜져요.'
+      : '디스코드 자동 공지와 구글 캘린더 자동 추가는 관리용 연결을 설정하면 켜져요.';
+    box.innerHTML = `<div class="cand-top"><h2 class="section-title">후보 시간 <small>${list.length}개 · 되는 사람이 많은 순</small></h2>${opts}</div><p class="cand-hint">${hint}</p><div class="candidate-list">`
+      + shown.map((x, i) => {
+        const total = x.ok.length + x.no.length;
+        const sum = !total ? '스케줄 정보가 있는 사람이 없어요'
+          : x.ok.length === total ? `<b class="all-ok">가능한 사람 전원 참석 (${total}명)</b>` : `<b>${total}명 중 ${x.ok.length}명 가능</b>`;
+        return `<article class="candidate cand-v2"><div class="cand-head"><div><strong>${esc(fmtDate(keyToDate(x.date)))} ${fmtM(x.start)}–${fmtM(x.end)}</strong><span class="cand-sum">${sum}</span></div><button class="primary" data-fix="${i}" type="button">이 시간 확정</button></div>`
+          + `<div class="cand-rows">${whoRow('가능', 'ok', x.ok)}${whoRow('불가', 'no', x.no)}${whoRow('확인 필요', 'unknown', x.unknown)}</div></article>`;
+      }).join('') + '</div>'
+      + (!state.showAllCand && list.length > 8 ? `<button type="button" class="ghost more-cand" data-more-cand>후보 더 보기 (${Math.min(list.length, 30) - 8}개 더)</button>` : '');
   }
 
   function meetingPayload(m) {
@@ -669,12 +709,12 @@
     btn.disabled = true; btn.textContent = '저장 중…';
     try {
       const payload = meetingPayload(x);
-      const json = await adminRequest({ action: 'create', pass }, { meeting: payload });
+      const json = await adminRequest({ action: 'create', pass, ...notifyFields(x, 'created') }, { meeting: payload });
       state.adminPass = pass;
       applyResponse(json, { meeting: { title: x.title, start: payload['시작 일시'], end: payload['종료 일시'], members: payload['참석자'], place: x.place, status: '확정' } });
       state.meetResult = null;
       renderMeet(); renderMonth();
-      openMeeting(findMeeting(x) || { ...x }, 'created');
+      openMeeting(findMeeting(x) || { ...x }, 'created', json);
     } catch (e) {
       passFailed(e);
       btn.disabled = false; btn.textContent = '이 시간 확정';
@@ -684,6 +724,25 @@
 
   /* ───────── 회의 상세 (공지문 다시 보기 · 수정 · 취소) ───────── */
 
+  // 구글 캘린더 '일정 추가' 화면을 미리 채워서 여는 주소 (누구나 자기 캘린더에 추가할 수 있어요)
+  function gcalUrl(m) {
+    const t = n => `${pad(Math.floor((n % 1440) / 60))}${pad(n % 60)}00`;
+    const d1 = m.date.replace(/-/g, '');
+    const d2 = (m.end >= 1440 ? dateKey(addDays(keyToDate(m.date), 1)) : m.date).replace(/-/g, '');
+    const q = new URLSearchParams({ action: 'TEMPLATE', text: m.title, dates: `${d1}T${t(m.start)}/${d2}T${t(m.end)}`, ctz: 'Asia/Seoul', details: `참석자: ${m.members.join(', ') || '-'}` });
+    if (m.place) q.set('location', m.place);
+    return 'https://calendar.google.com/calendar/render?' + q.toString();
+  }
+
+  // 디스코드로 보낼 글 (공지문 + 캘린더 추가 링크)
+  function discordText(m, kind) {
+    return noticeText(m, kind) + (kind === 'canceled' ? '' : `\n📆 [내 구글 캘린더에 추가](${gcalUrl(m)})`);
+  }
+  function notifyFields(m, kind) {
+    const on = !!state.features.discord && state.notifyDiscord;
+    return { notify: on, notice: on ? discordText(m, kind) : '' };
+  }
+
   function noticeText(m, kind) {
     const d = keyToDate(m.date);
     const when = `${d.getFullYear()}년 ${d.getMonth() + 1}월 ${d.getDate()}일(${DAYS[d.getDay()]}) ${fmtM(m.start)}~${fmtM(Math.min(m.end, 1440))}`;
@@ -691,8 +750,17 @@
     return `📅 ${kind === 'updated' ? '[일정 변경] ' : ''}${m.title} 안내\n\n일시: ${when}\n참석자: ${m.members.join(', ') || '-'}${m.place ? `\n회의 링크/장소: ${m.place}` : ''}\n\n확인 부탁드립니다!`;
   }
 
-  function openMeeting(m, kind = 'view') {
-    state.dlg = { meeting: m, mode: 'view', kind };
+  function resultText(json) {
+    if (!json) return '';
+    const bits = [];
+    if (json.done?.discord) bits.push('디스코드에 공지를 올렸어요.');
+    if (json.done?.calendar === 'saved') bits.push('구글 캘린더에 반영했어요.');
+    if (json.done?.calendar === 'deleted') bits.push('구글 캘린더에서 지웠어요.');
+    return bits.join(' ');
+  }
+
+  function openMeeting(m, kind = 'view', json = null) {
+    state.dlg = { meeting: m, mode: 'view', kind, extra: resultText(json), warnings: json?.warnings || [] };
     renderMeetingDialog();
     const d = $('#meetingDialog');
     if (!d.open) d.showModal();
@@ -712,24 +780,31 @@
           <div class="field"><label for="edEnd">종료</label><select id="edEnd">${timeOptions(30, 1440, Math.min(m.end, 1440))}</select></div>
           <div class="field full"><span class="label">참석자</span>${pickerHtml('ed', m.members)}</div>
           <div class="field full"><label for="edPlace">회의 링크/장소</label><input id="edPlace" value="${esc(m.place || '')}"></div>
+          ${state.features.discord ? `<label class="notify-opt full"><input type="checkbox" data-notify${state.notifyDiscord ? ' checked' : ''}> 바뀐 내용을 디스코드에 공지하기</label>` : ''}
         </div>${err}
         <div class="dlg-foot"><button type="button" class="ghost" data-dlg="view">돌아가기</button><span class="grow"></span><button type="submit" class="primary">수정 저장</button></div></form>`;
       return;
     }
-    const msg = { created: '회의를 확정 회의 캘린더에 저장했어요. 공지문을 복사해서 팀에 보내 주세요.', updated: '회의를 수정했어요. 바뀐 내용으로 공지문을 다시 만들었어요.', canceled: '회의를 취소했어요. 캘린더에서 빠졌어요. 필요하면 취소 공지를 보내 주세요.' }[kind];
+    const base = { created: '회의를 확정 회의 캘린더에 저장했어요.', updated: '회의를 수정했어요. 바뀐 내용으로 공지문을 다시 만들었어요.', canceled: '회의를 취소했어요. 확정 회의 캘린더에서 빠졌어요.' }[kind];
+    const msg = base ? `${base} ${state.dlg.extra || (state.features.discord ? '' : '공지문을 복사해서 팀에 보내 주세요.')}`.trim() : '';
+    const warns = (state.dlg.warnings || []).map(w => `<p class="dlg-warn">${esc(w)}</p>`).join('');
     const canEdit = !!ADMIN_URL && kind !== 'canceled';
+    const f = state.features;
     d.innerHTML = `<div class="dlg-head"><div><h2>${esc(m.title)}</h2><p>${esc(fmtDate(keyToDate(m.date)))} ${fmtM(m.start)}–${fmtM(Math.min(m.end, 1440))}</p></div>${x}</div>
       <div class="dlg-body">
-        ${msg ? `<p class="dlg-ok">${msg}</p>` : ''}
+        ${msg ? `<p class="dlg-ok">${esc(msg)}</p>` : ''}${warns}
         <dl class="dlg-info"><div><dt>참석자</dt><dd>${esc(m.members.join(', ') || '-')}</dd></div><div><dt>링크/장소</dt><dd>${esc(m.place || '-')}</dd></div></dl>
         <label class="label" for="dlgNotice">${kind === 'canceled' ? '취소 공지문' : '공지문'}</label>
         <textarea id="dlgNotice" readonly>${esc(noticeText(m, kind))}</textarea>
+        <div class="dlg-tools">
+          ${kind === 'canceled' ? '' : `<a class="ghost tool-btn" href="${esc(gcalUrl(m))}" target="_blank" rel="noopener">📆 내 구글 캘린더에 추가</a>`}
+          ${f.discord ? '<button type="button" class="ghost tool-btn" data-dlg="discord">디스코드로 공지 보내기</button>' : ''}
+          <span class="grow"></span><button type="button" class="primary" data-copy="#dlgNotice">공지문 복사</button>
+        </div>
+        ${canEdit && f.discord ? `<label class="notify-opt"><input type="checkbox" data-notify${state.notifyDiscord ? ' checked' : ''}> 수정·취소하면 디스코드에도 알리기</label>` : ''}
       </div>${err}
-      <div class="dlg-foot">
-        ${kind === 'canceled' ? '' : `<button type="button" class="ghost" data-dlg="edit"${canEdit ? '' : ' disabled'}>회의 수정</button><button type="button" class="ghost danger" data-dlg="cancel"${canEdit ? '' : ' disabled'}>회의 취소</button>`}
-        <span class="grow"></span><button type="button" class="primary" data-copy="#dlgNotice">공지문 복사</button>
-      </div>
-      ${!ADMIN_URL && kind !== 'canceled' ? '<p class="dlg-hint">회의 수정·취소는 관리용 연결(config.js의 ADMIN_API_URL)을 설정하면 쓸 수 있어요.</p>' : ''}`;
+      ${kind === 'canceled' ? '' : `<div class="dlg-foot"><button type="button" class="ghost" data-dlg="edit"${canEdit ? '' : ' disabled'}>회의 수정</button><button type="button" class="ghost danger" data-dlg="cancel"${canEdit ? '' : ' disabled'}>회의 취소</button></div>`}
+      ${!ADMIN_URL && kind !== 'canceled' ? '<p class="dlg-hint">회의 수정·취소와 디스코드 자동 공지는 관리용 연결을 한 번 설정하면 켜져요. 그 전까지는 공지문 복사와 캘린더 추가만 쓸 수 있어요.</p>' : ''}`;
   }
 
   function dlgError(msg) {
@@ -750,11 +825,11 @@
     const btn = $('#editForm [type="submit"]');
     btn.disabled = true; btn.textContent = '저장 중…';
     try {
-      const json = await adminRequest({ action: 'meeting_update', pass, id: m.id, original: originalOf(m) }, { meeting: meetingPayload(upd) });
+      const json = await adminRequest({ action: 'meeting_update', pass, id: m.id, original: originalOf(m), ...notifyFields(upd, 'updated') }, { meeting: meetingPayload(upd) });
       state.adminPass = pass;
       applyResponse(json);
       renderMeet(); renderMonth();
-      openMeeting(findMeeting(upd) || { ...m, ...upd }, 'updated');
+      openMeeting(findMeeting(upd) || { ...m, ...upd }, 'updated', json);
     } catch (e) {
       passFailed(e);
       btn.disabled = false; btn.textContent = '수정 저장';
@@ -768,12 +843,28 @@
     const pass = await askPassword('회의를 취소하려면 관리 비밀번호를 입력해 주세요.');
     if (!pass) return;
     try {
-      const json = await adminRequest({ action: 'meeting_cancel', pass, id: m.id, original: originalOf(m) });
+      const json = await adminRequest({ action: 'meeting_cancel', pass, id: m.id, original: originalOf(m), ...notifyFields(m, 'canceled') });
       state.adminPass = pass;
       applyResponse(json);
       renderMeet(); renderMonth();
-      openMeeting(m, 'canceled');
+      openMeeting(m, 'canceled', json);
     } catch (e) { passFailed(e); dlgError(e.message); }
+  }
+
+  async function sendDiscord(btn) {
+    const { meeting: m, kind } = state.dlg;
+    const pass = await askPassword('디스코드에 공지를 보내려면 관리 비밀번호를 입력해 주세요.');
+    if (!pass) return;
+    btn.disabled = true; btn.textContent = '보내는 중…';
+    try {
+      await adminRequest({ action: 'notify', pass, notice: discordText(m, kind === 'canceled' ? 'canceled' : kind === 'updated' ? 'updated' : 'view') });
+      state.adminPass = pass;
+      btn.textContent = '디스코드에 보냈어요';
+    } catch (e) {
+      passFailed(e);
+      btn.disabled = false; btn.textContent = '디스코드로 공지 보내기';
+      dlgError(e.message);
+    }
   }
 
   /* ───────── 팀 명단 (관리자) ───────── */
@@ -1173,8 +1264,10 @@
         else if (act === 'edit') { state.dlg.mode = 'edit'; renderMeetingDialog(); }
         else if (act === 'view') { state.dlg.mode = 'view'; renderMeetingDialog(); }
         else if (act === 'cancel') cancelMeeting();
+        else if (act === 'discord') sendDiscord(dlgBtn);
         return;
       }
+      if (t.closest('[data-more-cand]')) { state.showAllCand = true; renderCandidates(); return; }
       const closeBtn = t.closest('[data-dlg-close]');
       if (closeBtn) { $('#' + closeBtn.dataset.dlgClose).close(); return; }
       const copy = t.closest('[data-copy]');
@@ -1205,6 +1298,7 @@
       if (!t) return;
       const picker = t.closest('.picker');
       if (picker) syncPicker(picker.id.replace('Picker', ''));
+      if (t.matches('[data-notify]')) { state.notifyDiscord = t.checked; $$('[data-notify]').forEach(x => { x.checked = t.checked; }); }
       if (t.closest('#meetForm')) state.meetDraft = readMeetForm();
       if (t.closest('#linkForm')) state.linkDraft = readLinkDraft();
     };

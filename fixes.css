@@ -105,8 +105,36 @@ button.event.meeting:hover { background: #dccbd1; }
 .chip button { padding: 0 5px; border: 0; background: none; color: inherit; font-size: 1rem; line-height: 1; cursor: pointer; }
 
 /* 후보 시간 */
-.candidate-wrap .candidate-list { grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: 0; }
+.candidate-wrap .candidate-list { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; margin-top: 0; }
 .candidate .primary:disabled { opacity: .6; }
+
+/* 후보 시간: 되는 사람 / 안 되는 사람 / 확인 필요 */
+.cand-top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; }
+.cand-top .section-title { margin: 0; }
+.cand-top .section-title small { color: var(--muted); font-weight: 600; }
+.cand-hint { margin: 4px 0 12px; color: var(--muted); font-size: .8rem; }
+.notify-opt { display: inline-flex; align-items: center; gap: 7px; padding: 7px 12px; border: 1px solid var(--line); border-radius: 999px; background: #fff; font-size: .84rem; font-weight: 700; cursor: pointer; }
+.notify-opt input { width: auto; margin: 0; padding: 0; accent-color: var(--brand); }
+.candidate.cand-v2 { display: block; padding: 14px 16px; }
+.cand-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
+.cand-head strong { display: block; font-size: 1rem; }
+.cand-sum { display: block; margin-top: 2px; color: var(--muted); font-size: .8rem; }
+.cand-sum b { color: var(--ink); }
+.cand-sum b.all-ok { color: #3d6b40; }
+.cand-rows { display: grid; gap: 6px; }
+.cand-row { display: grid; grid-template-columns: 78px 1fr; align-items: start; gap: 8px; }
+.cand-label { padding: 4px 0; font-size: .75rem; font-weight: 850; }
+.cand-label.ok { color: #3d6b40; }
+.cand-label.no { color: #9a3f3a; }
+.cand-label.unknown { color: #8b5845; }
+.cand-chips { display: flex; flex-wrap: wrap; gap: 5px; }
+.cand-chips span { display: inline-flex; align-items: baseline; gap: 4px; padding: 4px 9px; border-radius: 999px; font-size: .78rem; font-weight: 800; }
+.cand-chips span small { font-size: .68rem; font-weight: 600; opacity: .85; }
+.cand-chips .ok { background: var(--green); color: var(--green-ink); }
+.cand-chips .no { background: #f3e6e3; color: #8a3d36; }
+.cand-chips .no.leave { background: #f6e0c8; color: #7c4a26; }
+.cand-chips .unknown { background: #fff; color: #8b5845; box-shadow: inset 0 0 0 1.5px #d9a898; }
+.more-cand { display: block; width: 100%; margin-top: 10px; padding: 11px; font-weight: 800; }
 
 /* 캘린더 + 이번 달 회의 목록 */
 .meet-cal { padding: 4px; }
@@ -134,7 +162,12 @@ button.event.meeting:hover { background: #dccbd1; }
 .grow { flex: 1; }
 .dlg-ok { margin: 0; padding: 10px 12px; border-radius: 10px; background: #eef6ea; color: #3d5c3a; font-size: .88rem; }
 .dlg-error { margin: 0 20px 10px; padding: 10px 12px; border-radius: 10px; background: #fbe9e5; color: #7a3a33; font-size: .88rem; }
-.dlg-hint { margin: -6px 20px 16px; color: var(--muted); font-size: .8rem; }
+.dlg-hint { margin: 0 20px 16px; color: var(--muted); font-size: .8rem; line-height: 1.5; }
+.dlg-warn { margin: 0; padding: 10px 12px; border-radius: 10px; background: #fff0e7; color: #7a4a2e; font-size: .85rem; }
+.dlg-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.tool-btn { display: inline-flex; align-items: center; color: var(--ink); font-size: .85rem; font-weight: 700; text-decoration: none; }
+.sheet-dialog .notify-opt { justify-self: start; }
+.sheet-dialog .dlg-foot { justify-content: flex-start; }
 .dlg-info { display: grid; gap: 6px; margin: 0; }
 .dlg-info div { display: grid; grid-template-columns: 72px 1fr; gap: 8px; }
 .dlg-info dt { color: var(--muted); font-size: .82rem; }
@@ -196,6 +229,8 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   .src-list div { grid-template-columns: 1fr; gap: 4px; }
 }
 @media (max-width: 560px) {
+  .cand-row { grid-template-columns: 1fr; gap: 3px; }
+  .cand-head { align-items: flex-start; }
   .sync-word { display: none; }
   .brand { font-size: .85rem; white-space: nowrap; }
   .sync { gap: 6px; }
