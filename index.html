@@ -37,26 +37,31 @@
     .gantt-now-line{position:absolute;inset:0 auto 0 var(--now);width:2px;background:#20b977;z-index:2;pointer-events:none;opacity:.8}
     .gantt-legend{display:flex;gap:14px;flex-wrap:wrap;margin:10px 2px 0;font-size:12px;color:var(--muted,#687680)}
     .gantt-legend i{display:inline-block;width:10px;height:10px;margin-right:5px;border-radius:3px;vertical-align:-1px}
-    .week-matrix{border-collapse:separate;border-spacing:0;min-width:920px;width:100%;font-size:12px}
-    .week-matrix th,.week-matrix td{padding:9px 10px;border-right:1px solid var(--line,#dfe4e7);border-bottom:1px solid var(--line,#dfe4e7);vertical-align:middle;text-align:center}
+    .week-matrix{border-collapse:separate;border-spacing:0;min-width:1050px;width:100%;font-size:12px}
+    .week-matrix th,.week-matrix td{height:60px;padding:10px 12px;border-right:1px solid var(--line,#dfe4e7);border-bottom:1px solid var(--line,#dfe4e7);vertical-align:middle;text-align:center}
     .week-matrix tr:last-child td{border-bottom:0}.week-matrix th:last-child,.week-matrix td:last-child{border-right:0}
     .week-matrix thead th{position:sticky;top:0;z-index:4;background:var(--surface-2,#f3f6f6);font-weight:800}
-    .week-matrix .member-col{position:sticky;left:0;z-index:3;width:122px;min-width:122px;text-align:left;background:var(--surface,#fff)}
+    .week-matrix .member-col{position:sticky;left:0;z-index:3;width:138px;min-width:138px;text-align:left;background:var(--surface,#fff);box-shadow:3px 0 8px rgba(0,0,0,.06)}
     .week-matrix thead .member-col{z-index:5;background:var(--surface-2,#f3f6f6)}
-    .week-member{display:block;font-size:13px;font-weight:800;line-height:1.25;color:#17232c!important;opacity:1!important;visibility:visible!important}
-    .week-team{display:block;margin-top:2px;font-size:10px;font-weight:500;color:var(--muted,#687680)}
-    .week-day{display:block;font-size:13px}.week-date{display:block;margin-top:2px;font-size:10px;color:var(--muted,#687680)}
-    .week-cell{min-width:102px;background:var(--surface,#fff)}
-    .week-pill{display:block;margin:2px auto;padding:5px 6px;border-radius:6px;background:#daf5e7;color:#126a43;font-size:11px;font-weight:800;white-space:nowrap}
+    .week-member{display:block;font-size:14px;font-weight:800;line-height:1.25;color:#17232c!important;opacity:1!important;visibility:visible!important}
+    .week-team{display:block;margin-top:4px;font-size:11px;font-weight:500;color:var(--muted,#687680)}
+    .week-day{display:block;font-size:14px}.week-date{display:block;margin-top:3px;font-size:11px;color:var(--muted,#687680)}
+    .week-cell{min-width:126px;background:var(--surface,#fff)}
+    .week-pill{display:block;margin:3px auto;padding:6px 7px;border-radius:7px;background:#daf5e7;color:#126a43;font-size:11px;font-weight:800;line-height:1.25;white-space:nowrap}
     .week-pill--leave{background:#f5e3bd;color:#77510c}.week-pill--miss{background:transparent;color:var(--muted,#849097)}
     .week-pill--off{background:#eef1f2;color:#68747b}.week-pill--check{background:#e7eef9;color:#46658c}
     .week-today{background:color-mix(in srgb,var(--ok,#2bb978) 8%,var(--surface,#fff))!important}
+    .week-guide{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin:0 0 10px;font-size:11px;color:var(--muted,#687680)}
+    .week-guide span{display:inline-flex;align-items:center;gap:5px}.week-guide i{width:10px;height:10px;border-radius:3px}
+    #v-month .cal__marks.has-names{display:flex;align-content:flex-start;align-items:flex-start;gap:3px;flex-wrap:wrap;margin-top:5px;overflow:hidden}
+    #v-month .cal-leave-name{display:inline-block;max-width:100%;padding:2px 5px;border-radius:4px;background:#a86508;color:#fff3d2;font-size:9px;font-style:normal;font-weight:800;line-height:1.35;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     @media(prefers-color-scheme:dark){.gantt-person__name,.week-member{color:#f1f6f7!important}}
     @media(max-width:720px){
       .gantt-scroll,.week-matrix-wrap{width:calc(100vw - 32px);max-width:calc(100vw - 32px)}
       .gantt-chart{width:900px;min-width:900px}.gantt-head,.gantt-person{grid-template-columns:104px 796px}
-      .gantt-person__meta{padding-left:10px}.week-matrix{min-width:820px}
+      .gantt-person__meta{padding-left:10px}.week-matrix{min-width:1000px}
       .gantt-scroll,.week-matrix-wrap{margin-inline:-4px;border-radius:12px}
+      #v-month .cal-leave-name{padding:1px 3px;font-size:8px}
     }
   </style>
 </head>
@@ -190,9 +195,47 @@
       };
       const wrap=document.createElement('div');wrap.className='week-matrix-wrap';
       wrap.innerHTML=`<table class="week-matrix"><thead><tr><th class="member-col">이름</th>${days.map(d=>{const parts=d.head.split(/\s+/);return `<th class="${d.today?'week-today':''}"><span class="week-day">${esc(parts[0])}</span><span class="week-date">${esc(parts.slice(1).join(' '))}</span></th>`}).join('')}</tr></thead><tbody>${order.map(name=>`<tr><td class="member-col"><span class="week-member">${esc(name)}</span><span class="week-team">${esc(members.get(name))}</span></td>${days.map(d=>`<td class="week-cell ${d.today?'week-today':''}">${cell(name,d)}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
-      oldStrip?.remove();oldCols.replaceWith(wrap);
+      const guide=document.createElement('div');guide.className='week-guide';
+      guide.innerHTML='<span><i style="background:#daf5e7"></i>작업 가능 시간</span><span><i style="background:#f5e3bd"></i>휴가·일정</span><span><i style="background:#eef1f2"></i>휴무</span><span><i style="border:1px solid #849097"></i>미입력</span>';
+      oldStrip?.remove();oldCols.before(guide);oldCols.replaceWith(wrap);
     }
-    function enhance(){if(busy)return;busy=true;try{makeTodayGantt();makeWeekMatrix();}finally{busy=false}}
+    function makeMonthNames(){
+      const root=document.querySelector('#v-month');
+      if(!root || root.querySelector('.cal-leave-name')) return;
+      const cal=root.querySelector('.cal');
+      const listTitle=root.querySelector('#s-mlist');
+      const listSec=listTitle?.closest('.sec');
+      if(!cal || !listSec) return;
+      const ym=root.querySelector('.pager__label')?.textContent.match(/(\d{4})년\s*(\d{1,2})월/);
+      if(!ym) return;
+      const viewYear=+ym[1];
+      const events=[...listSec.querySelectorAll('.rows > li .row')].map(row=>{
+        const name=row.querySelector('.row__name')?.textContent.trim();
+        const dateText=row.querySelector('.row__side')?.textContent||'';
+        const ds=[...dateText.matchAll(/(\d{1,2})\/(\d{1,2})/g)].map(m=>({m:+m[1],d:+m[2]}));
+        if(!name || !ds.length) return null;
+        let sy=viewYear, ey=viewYear;
+        if(ds[0].m>+ym[2]+6) sy--;
+        const end=ds[1]||ds[0];
+        if(end.m<ds[0].m) ey=sy+1; else ey=sy;
+        return {name,start:new Date(sy,ds[0].m-1,ds[0].d),end:new Date(ey,end.m-1,end.d)};
+      }).filter(Boolean);
+      if(!events.length) return;
+      [...cal.querySelectorAll('.cal__day')].forEach(day=>{
+        const dm=day.getAttribute('aria-label')?.match(/(\d{1,2})월\s*(\d{1,2})일/);
+        if(!dm) return;
+        let y=viewYear;const m=+dm[1],d=+dm[2];
+        if(m>+ym[2]+6)y--;else if(m<+ym[2]-6)y++;
+        const date=new Date(y,m-1,d);
+        const names=events.filter(e=>date>=e.start&&date<=e.end).map(e=>e.name);
+        if(!names.length) return;
+        const marks=day.querySelector('.cal__marks');
+        if(!marks) return;
+        marks.classList.add('has-names');
+        marks.innerHTML=[...new Set(names)].map(name=>`<i class="cal-leave-name">${esc(name)}</i>`).join('');
+      });
+    }
+    function enhance(){if(busy)return;busy=true;try{makeTodayGantt();makeWeekMatrix();makeMonthNames();}finally{busy=false}}
     const observer=new MutationObserver(()=>requestAnimationFrame(enhance));
     observer.observe(document.querySelector('#main'),{childList:true,subtree:true});
     enhance();
