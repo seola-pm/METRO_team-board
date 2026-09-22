@@ -349,7 +349,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 (() => {
   'use strict';
 
-  const VERSION = '2026-09-21-9';
+  const VERSION = '2026-09-22-1';
   const NEED_ADMIN_VERSION = 4;   // 이 홈페이지가 필요로 하는 관리용 코드(metro-admin.gs) 버전
   const C = window.METRO_CONFIG || {};
   const MAIN_URL = String(C.API_URL || '').trim();
@@ -1246,7 +1246,12 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
     const pass = await askPassword('회의를 삭제하려면 관리 비밀번호를 입력해 주세요.');
     if (!pass) return;
     try {
-      const json = await adminRequest({ action: 'meeting_delete', pass, id: m.id, original: originalOf(m) });
+      let json;
+      try { json = await adminRequest({ action: 'meeting_delete', pass, id: m.id, original: originalOf(m) }); }
+      catch (e) {
+        if (!e.unsupported) throw e;
+        json = await adminRequest({ action: 'meeting_cancel', pass, id: m.id, original: originalOf(m), notify: false, notice: '' });
+      }
       state.adminPass = pass;
       applyResponse(json);
       renderMeet(); renderMonth();
@@ -1311,7 +1316,8 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 
   // 디스코드 자동 공지 연결 (웹후크 주소는 Apps Script 안에 보관되고 홈페이지에는 다시 보이지 않아요)
   function discordCard() {
-    if (!adminReady() || state.src.admin.outdated) return '';
+    if (!adminReady()) return '';
+    if (state.src.admin.outdated) return `<div class="card discord-card"><div class="dc-head"><h2 class="section-title">디스코드 자동 공지</h2><span class="dc-state">준비 전</span></div><p>디스코드 연결은 최신 관리용 코드(버전 ${NEED_ADMIN_VERSION})가 배포되면 여기서 바로 할 수 있어요. 지금 배포된 코드는 버전 ${state.src.admin.version || '1~2'}예요. 링크·회의 수정과 삭제는 지금도 정상적으로 돼요.</p></div>`;
     const on = !!state.features.discord;
     return `<form id="discordForm" class="card discord-card"><div class="dc-head"><h2 class="section-title">디스코드 자동 공지</h2><span class="dc-state${on ? ' on' : ''}">${on ? '연결됨' : '연결 안 됨'}</span></div>
       <p>${on ? '회의를 확정·수정·취소하면 연결된 채널에 공지가 올라가요. 다른 채널로 바꾸려면 새 웹후크 주소를 넣고 저장하세요.' : '공지를 받을 채널의 <b>웹후크 URL</b>을 넣어 주세요. 채널 이름 옆 톱니(채널 편집) → 연동 → 웹후크 → 새 웹후크 → "웹후크 URL 복사"를 누르면 돼요.'}</p>
@@ -1369,15 +1375,22 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   }
   // 기본 링크까지 시트([링크 허브] 탭)로 옮겨져서 모두 수정할 수 있는 상태인지
   function linksInSheet() { return adminReady() && !!state.raw.admin?.linksImported; }
+  // 기본 링크를 지우거나 고치면 [링크 허브] 탭에 '숨김 표시' 한 줄을 남겨서 기본 링크를 가려요
+  const HIDE_MEMO = '__METRO_HIDE__';
+  function hiddenUrls() { return new Set((state.data.links || []).filter(l => l.memo === HIDE_MEMO).map(l => l.url)); }
+  function visibleLinks() {
+    const hidden = hiddenUrls();
+    return [
+      ...(linksInSheet() ? [] : formLinks().filter(x => !hidden.has(x.url)).map(x => ({ ...x, id: 'builtin:' + x.url, builtin: true }))),
+      ...(state.data.links || []).filter(l => l.memo !== HIDE_MEMO),
+    ];
+  }
 
   function renderLinks(preferState = false) {
     const root = $('#links');
     const draft = (preferState ? null : (state.linkFormOpen ? readLinkDraft() : null)) || state.linkDraft;
     const editable = adminReady();
-    const list = [
-      ...(linksInSheet() ? [] : formLinks().map(x => ({ ...x, id: 'builtin:' + x.url, builtin: true }))),
-      ...(state.data.links || []),
-    ];
+    const list = visibleLinks();
     const editing = state.linkEditId;
     const card = x => {
       const tools = x.builtin && !editable ? '<em class="link-tag">기본</em>'
@@ -1403,21 +1416,27 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
     }
   }
 
-  function findLink(id) {
-    return [...formLinks().map(x => ({ ...x, id: 'builtin:' + x.url, builtin: true })), ...state.data.links].find(x => x.id === id);
+  function findLink(id) { return visibleLinks().find(x => x.id === id); }
+
+  // 기본 링크 가리기: [링크 허브] 탭에 숨김 표시 한 줄 추가
+  function hideBuiltin(url, pass) {
+    return adminRequest({ action: 'link_create', pass }, { link: { title: '홈페이지 기본 링크 숨김 표시 (지우지 마세요)', url, memo: HIDE_MEMO } });
   }
 
-  // 기본 링크를 처음 고치거나 지울 때, 먼저 시트로 옮기고 그 링크의 시트 속 ID를 찾아요
-  async function sheetLinkId(id, pass) {
-    if (!id.startsWith('builtin:')) return id;
-    if (!linksInSheet()) {
-      const json = await adminRequest({ action: 'link_import', pass, links: formLinks() });
-      applyResponse(json);
+  // 링크 고치기: 새 버전 코드면 바로 고치고, 예전 코드면 '새로 추가 + 예전 것 삭제'로 똑같이 만들어요
+  async function updateLinkRequest(target, link, pass) {
+    if (target.builtin) {
+      const json = await adminRequest({ action: 'link_create', pass }, { link });
+      applyResponse(json, { link });
+      return hideBuiltin(target.url, pass);
     }
-    const url = id.slice('builtin:'.length);
-    const hit = state.data.links.find(x => x.url === url);
-    if (!hit) throw new Error('기본 링크를 시트로 옮기지 못했어요. 새로고침한 뒤 다시 시도해 주세요.');
-    return hit.id;
+    try { return await adminRequest({ action: 'link_update', pass, id: target.id }, { link }); }
+    catch (e) {
+      if (!e.unsupported) throw e;
+      const json = await adminRequest({ action: 'link_create', pass }, { link });
+      applyResponse(json, { link });
+      return adminRequest({ action: 'link_delete', pass, id: target.id });
+    }
   }
 
   function openLinkForm(id = '') {
@@ -1438,7 +1457,9 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
     const link = { title: d.title.trim(), url: d.url.trim(), memo: d.memo.trim() };
     try {
       let json;
-      if (editing) json = await adminRequest({ action: 'link_update', pass, id: await sheetLinkId(editing, pass) }, { link });
+      const target = editing ? findLink(editing) : null;
+      if (editing && !target) throw new Error('고칠 링크를 찾지 못했어요. 새로고침한 뒤 다시 시도해 주세요.');
+      if (target) json = await updateLinkRequest(target, link, pass);
       else json = await adminRequest({ action: 'link_create', pass }, { link });
       state.adminPass = pass;
       applyResponse(json, editing ? {} : { link });
@@ -1456,10 +1477,9 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
     const pass = await askPassword('링크를 삭제하려면 관리 비밀번호를 입력해 주세요.');
     if (!pass) return;
     try {
-      const target = await sheetLinkId(id, pass);
-      const json = await adminRequest({ action: 'link_delete', pass, id: target });
+      const json = link && link.builtin ? await hideBuiltin(link.url, pass) : await adminRequest({ action: 'link_delete', pass, id });
       state.adminPass = pass;
-      applyResponse(json, { removeLink: target });
+      applyResponse(json, link && link.builtin ? {} : { removeLink: id });
       if (state.linkEditId === id) { state.linkFormOpen = false; state.linkEditId = ''; }
       showNotice('링크를 삭제했어요.', 'ok');
       renderLinks();
@@ -1563,7 +1583,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
     try { json = JSON.parse(text); }
     catch { throw new Error(`연결 주소가 데이터 대신 다른 화면을 보내왔어요(응답 코드 ${res.status}). config.js의 주소가 지금 배포된 주소와 같은지, 배포 액세스 권한이 "모든 사용자"인지 확인해 주세요.`); }
     if (!json.ok) {
-      if (/알 수 없는 요청|요청을 몰라요/.test(json.error || '')) throw new Error(OUTDATED_MSG);
+      if (/알 수 없는 요청|요청을 몰라요/.test(json.error || '')) { const err = new Error(OUTDATED_MSG); err.unsupported = true; throw err; }
       throw new Error(json.error || '시트가 데이터를 보내주지 않았어요.');
     }
     return json;
@@ -1650,7 +1670,6 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
       const partial = results.some(s => s.status === 'error' || s.status === 'wrong');
       setSync(partial ? 'warn' : 'ok', `<span class="sync-word">${partial ? '일부만 연결됨' : '시트 연결됨'}</span> ${hhmm(state.lastSync)}`, partial ? '누르면 어느 쪽이 끊겼는지 볼 수 있어요' : '1분마다 자동으로 다시 불러와요. 누르면 연결 상태를 볼 수 있어요');
       if ($('#notice').dataset.tone === 'error') hideNotice();
-      if (state.src.admin.outdated && !quiet) showNotice(OUTDATED_MSG, 'error');
       if (state.src.admin.status === 'wrong' && !quiet) showNotice('관리용 연결 주소에 새 관리용 코드가 아닌 다른 코드가 연결돼 있어요. 그래서 비밀번호가 예전 그대로이고 회의 수정·삭제가 안 돼요. 오른쪽 위 연결 표시를 눌러 확인해 주세요.', 'error');
       renderAll();
     } catch (e) {
