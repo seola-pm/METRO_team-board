@@ -252,6 +252,17 @@ b.until { background: var(--paper2); color: var(--muted); }
 .unlock-card p { margin: 0; color: var(--muted); }
 .unlock-card input { width: 100%; padding: 11px; border: 1px solid var(--line); border-radius: 9px; background: #fff; }
 
+/* 디스코드 자동 공지 설정 */
+.discord-card { display: grid; gap: 10px; margin-top: 16px; padding: 18px; }
+.dc-head { display: flex; align-items: center; gap: 10px; }
+.dc-head .section-title { margin: 0; }
+.dc-state { padding: 3px 10px; border-radius: 999px; background: #eee8e3; color: var(--muted); font-size: .75rem; font-weight: 800; }
+.dc-state.on { background: #dff3e8; color: #17674d; }
+.discord-card p { margin: 0; color: var(--muted); font-size: .88rem; line-height: 1.6; }
+.dc-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.dc-row input { flex: 1 1 320px; min-width: 0; padding: 11px; border: 1px solid var(--line); border-radius: 9px; background: #fff; }
+.dc-note { color: var(--muted); font-size: .75rem; }
+
 /* ── 링크 허브 ── */
 .link-card { position: relative; }
 .link-tag { position: absolute; top: 12px; right: 12px; padding: 2px 8px; border-radius: 999px; background: var(--paper2); color: var(--muted); font-size: .7rem; font-style: normal; }
@@ -338,8 +349,8 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 (() => {
   'use strict';
 
-  const VERSION = '2026-09-21-8';
-  const NEED_ADMIN_VERSION = 3;   // 이 홈페이지가 필요로 하는 관리용 코드(metro-admin.gs) 버전
+  const VERSION = '2026-09-21-9';
+  const NEED_ADMIN_VERSION = 4;   // 이 홈페이지가 필요로 하는 관리용 코드(metro-admin.gs) 버전
   const C = window.METRO_CONFIG || {};
   const MAIN_URL = String(C.API_URL || '').trim();
   const ADMIN_URL = String(C.ADMIN_API_URL || '').trim();
@@ -1056,7 +1067,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
       ? `<label class="notify-opt"><input type="checkbox" data-notify${state.notifyDiscord ? ' checked' : ''}> 확정하면 디스코드에 공지 올리기</label>`
       : '';
     const hint = f.discord && f.calendar ? '확정하면 구글 캘린더에도 자동으로 추가돼요.'
-      : f.calendar ? '확정하면 구글 캘린더에도 자동으로 추가돼요. 디스코드 자동 공지는 관리용 Apps Script에 웹후크 주소를 넣으면 켜져요.'
+      : f.calendar ? '확정하면 구글 캘린더에도 자동으로 추가돼요. 디스코드 자동 공지는 [팀 명단] 화면 맨 아래에서 연결하면 켜져요.'
       : '디스코드 자동 공지와 구글 캘린더 자동 추가는 관리용 연결을 설정하면 켜져요.';
     box.innerHTML = `<div class="cand-top"><h2 class="section-title">후보 시간 <small>${list.length}개 · 되는 사람이 많은 순</small></h2>${opts}</div><p class="cand-hint">${hint}</p><div class="candidate-list">`
       + shown.map((x, i) => {
@@ -1294,7 +1305,35 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
       return `<div class="person${soon ? ' long-person' : ''}"><div class="lp-name"><strong>${esc(p.name)}</strong><small>${badges.join(' ')} ${esc(p.team)}</small></div>${soon}</div>`;
     };
     root.innerHTML = header('팀 명단', '현재 팀 상태와 일정 확인 방법을 구분해 확인합니다. 30일 이상 쉬는 일정은 시작일에 자동으로 장기 OFF로 옮겨져요.', lock)
-      + `<div class="team-groups">${groups.map(([name, fn]) => { const list = state.data.team.filter(fn); return `<section class="card team-group"><h2 class="section-title">${name} <small>${list.length}명</small></h2>${list.map(row).join('') || '<p class="empty">해당 인원이 없어요.</p>'}</section>`; }).join('')}</div>`;
+      + `<div class="team-groups">${groups.map(([name, fn]) => { const list = state.data.team.filter(fn); return `<section class="card team-group"><h2 class="section-title">${name} <small>${list.length}명</small></h2>${list.map(row).join('') || '<p class="empty">해당 인원이 없어요.</p>'}</section>`; }).join('')}</div>`
+      + discordCard();
+  }
+
+  // 디스코드 자동 공지 연결 (웹후크 주소는 Apps Script 안에 보관되고 홈페이지에는 다시 보이지 않아요)
+  function discordCard() {
+    if (!adminReady() || state.src.admin.outdated) return '';
+    const on = !!state.features.discord;
+    return `<form id="discordForm" class="card discord-card"><div class="dc-head"><h2 class="section-title">디스코드 자동 공지</h2><span class="dc-state${on ? ' on' : ''}">${on ? '연결됨' : '연결 안 됨'}</span></div>
+      <p>${on ? '회의를 확정·수정·취소하면 연결된 채널에 공지가 올라가요. 다른 채널로 바꾸려면 새 웹후크 주소를 넣고 저장하세요.' : '공지를 받을 채널의 <b>웹후크 URL</b>을 넣어 주세요. 채널 이름 옆 톱니(채널 편집) → 연동 → 웹후크 → 새 웹후크 → "웹후크 URL 복사"를 누르면 돼요.'}</p>
+      <div class="dc-row"><input id="discordUrl" type="url" placeholder="https://discord.com/api/webhooks/…" aria-label="디스코드 웹후크 주소"><button class="primary" type="submit">저장하고 테스트 보내기</button>${on ? '<button type="button" class="ghost danger" data-discord-clear>연결 끊기</button>' : ''}</div>
+      <small class="dc-note">채널 링크(discord.com/channels/…)가 아니라 웹후크 주소(discord.com/api/webhooks/…)여야 해요. 저장하면 채널에 연결 확인 메시지가 하나 올라가요.</small></form>`;
+  }
+
+  async function saveDiscord(clear = false) {
+    const url = clear ? '' : $('#discordUrl').value.trim();
+    if (!clear) {
+      if (/discord(app)?\.com\/channels\//i.test(url)) return showNotice('이건 채널을 여는 링크예요. 채널 편집(톱니) → 연동 → 웹후크에서 만든 "웹후크 URL"을 넣어 주세요.', 'error');
+      if (!/^https:\/\/(ptb\.|canary\.)?discord(app)?\.com\/api\/webhooks\//i.test(url)) return showNotice('웹후크 주소는 https://discord.com/api/webhooks/ 로 시작해야 해요.', 'error');
+    } else if (!confirm('디스코드 자동 공지 연결을 끊을까요?')) return;
+    const pass = await askPassword(clear ? '연결을 끊으려면 관리 비밀번호를 입력해 주세요.' : '디스코드를 연결하려면 관리 비밀번호를 입력해 주세요.');
+    if (!pass) return;
+    try {
+      const json = await adminRequest({ action: 'discord_set', pass, webhook: url });
+      state.adminPass = pass;
+      applyResponse(json);
+      showNotice(clear ? '디스코드 연결을 끊었어요.' : '디스코드를 연결했어요. 채널에 확인 메시지가 올라갔는지 봐 주세요.', 'ok');
+      renderTeam(); renderMeet();
+    } catch (e) { passFailed(e); showNotice(e.message, 'error'); }
   }
 
   async function unlock() {
@@ -1455,7 +1494,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
     return { ok: '연결됨', error: `연결 안 됨 — ${s.error}`, wrong: `잘못된 코드가 연결됨 — ${s.error}`, off: '설정 전 (config.js의 ADMIN_API_URL이 비어 있어요)', idle: '확인 중', empty: '읽었지만 내용 없음' }[s.status] || s.status;
   }
   function adminReady() { return state.src.admin.status === 'ok'; }
-  const OUTDATED_MSG = '관리용 Apps Script가 예전 버전이에요. 그래서 일부 수정·삭제가 "요청을 몰라요" 오류로 막혀요. 최신 metro-admin.gs를 붙여 넣은 뒤 [배포] → [배포 관리] → 연필 → 버전 "새 버전" → [배포]를 해 주세요. (비밀번호·디스코드 주소 줄은 다시 채워야 해요)';
+  const OUTDATED_MSG = '관리용 Apps Script가 예전 버전이에요. 그래서 일부 수정·삭제가 "요청을 몰라요" 오류로 막혀요. 최신 metro-admin.gs를 붙여 넣은 뒤 [배포] → [배포 관리] → 연필 → 버전 "새 버전" → [배포]를 해 주세요. (최신 파일에는 비밀번호가 이미 들어 있어서 그대로 붙여 넣으면 돼요)';
   // 관리 기능이 왜 잠겨 있는지 한 문장으로
   function adminLockReason() {
     const st = state.src.admin.status;
@@ -1761,16 +1800,18 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
       const del = t.closest('[data-link-delete]');
       if (del) { deleteLink(del.dataset.linkDelete); return; }
       if (t.closest('#lockTeam')) { lockAdmin(); return; }
+      if (t.closest('[data-discord-clear]')) { saveDiscord(true); return; }
       if (t.closest('[data-reload]')) { load(); return; }
     });
     document.addEventListener('submit', e => {
       const id = e.target.id;
-      if (!['meetForm', 'teamUnlock', 'linkForm', 'editForm', 'passForm'].includes(id)) return;
+      if (!['meetForm', 'teamUnlock', 'linkForm', 'editForm', 'passForm', 'discordForm'].includes(id)) return;
       e.preventDefault();
       if (id === 'meetForm') findCandidates();
       else if (id === 'teamUnlock') unlock();
       else if (id === 'linkForm') saveLink();
       else if (id === 'editForm') saveEdit();
+      else if (id === 'discordForm') saveDiscord();
       else closePass($('#passInput').value);
     });
     const saveDraft = e => {
