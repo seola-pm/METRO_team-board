@@ -338,7 +338,8 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 (() => {
   'use strict';
 
-  const VERSION = '2026-09-21-7';
+  const VERSION = '2026-09-21-8';
+  const NEED_ADMIN_VERSION = 3;   // 이 홈페이지가 필요로 하는 관리용 코드(metro-admin.gs) 버전
   const C = window.METRO_CONFIG || {};
   const MAIN_URL = String(C.API_URL || '').trim();
   const ADMIN_URL = String(C.ADMIN_API_URL || '').trim();
@@ -1450,9 +1451,11 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   /* ───────── 연결 상태 창 (오른쪽 위 점을 누르면 열려요) ───────── */
 
   function srcText(s) {
+    if (s.status === 'ok' && s.outdated) return `연결됨 · 하지만 예전 코드(버전 ${s.version || '확인 안 됨'})예요. 새 버전(${NEED_ADMIN_VERSION})으로 배포해 주세요.`;
     return { ok: '연결됨', error: `연결 안 됨 — ${s.error}`, wrong: `잘못된 코드가 연결됨 — ${s.error}`, off: '설정 전 (config.js의 ADMIN_API_URL이 비어 있어요)', idle: '확인 중', empty: '읽었지만 내용 없음' }[s.status] || s.status;
   }
   function adminReady() { return state.src.admin.status === 'ok'; }
+  const OUTDATED_MSG = '관리용 Apps Script가 예전 버전이에요. 그래서 일부 수정·삭제가 "요청을 몰라요" 오류로 막혀요. 최신 metro-admin.gs를 붙여 넣은 뒤 [배포] → [배포 관리] → 연필 → 버전 "새 버전" → [배포]를 해 주세요. (비밀번호·디스코드 주소 줄은 다시 채워야 해요)';
   // 관리 기능이 왜 잠겨 있는지 한 문장으로
   function adminLockReason() {
     const st = state.src.admin.status;
@@ -1520,7 +1523,10 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
     let json;
     try { json = JSON.parse(text); }
     catch { throw new Error(`연결 주소가 데이터 대신 다른 화면을 보내왔어요(응답 코드 ${res.status}). config.js의 주소가 지금 배포된 주소와 같은지, 배포 액세스 권한이 "모든 사용자"인지 확인해 주세요.`); }
-    if (!json.ok) throw new Error(json.error || '시트가 데이터를 보내주지 않았어요.');
+    if (!json.ok) {
+      if (/알 수 없는 요청|요청을 몰라요/.test(json.error || '')) throw new Error(OUTDATED_MSG);
+      throw new Error(json.error || '시트가 데이터를 보내주지 않았어요.');
+    }
     return json;
   }
 
@@ -1582,7 +1588,11 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
           // 주소는 열리는데 metro-admin.gs가 아닌 다른 코드(예: 기존 Apps Script)가 배포된 경우
           state.raw.admin = null;
           state.src.admin = { status: 'wrong', error: '이 주소에는 새 관리용 코드(metro-admin.gs)가 아니라 다른 코드가 배포돼 있어요. 기존 Apps Script에서 "새 배포"를 한 주소일 가능성이 커요. script.google.com에서 새 프로젝트를 만들어 metro-admin.gs를 붙여 넣고 배포한 주소를 넣어 주세요.' };
-        } else { state.raw.admin = a.value; state.src.admin = { status: 'ok', error: '' }; }
+        } else {
+          state.raw.admin = a.value;
+          const v = +a.value.scriptVersion || 0;
+          state.src.admin = { status: 'ok', error: '', outdated: v < NEED_ADMIN_VERSION, version: v };
+        }
       }
       const results = [state.src.main, state.src.admin].filter(s => s.status !== 'off');
       if (!results.some(s => s.status === 'ok') && !state.raw.main) throw new Error(results.map(s => s.error).find(Boolean) || '시트를 불러오지 못했어요.');
@@ -1601,6 +1611,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
       const partial = results.some(s => s.status === 'error' || s.status === 'wrong');
       setSync(partial ? 'warn' : 'ok', `<span class="sync-word">${partial ? '일부만 연결됨' : '시트 연결됨'}</span> ${hhmm(state.lastSync)}`, partial ? '누르면 어느 쪽이 끊겼는지 볼 수 있어요' : '1분마다 자동으로 다시 불러와요. 누르면 연결 상태를 볼 수 있어요');
       if ($('#notice').dataset.tone === 'error') hideNotice();
+      if (state.src.admin.outdated && !quiet) showNotice(OUTDATED_MSG, 'error');
       if (state.src.admin.status === 'wrong' && !quiet) showNotice('관리용 연결 주소에 새 관리용 코드가 아닌 다른 코드가 연결돼 있어요. 그래서 비밀번호가 예전 그대로이고 회의 수정·삭제가 안 돼요. 오른쪽 위 연결 표시를 눌러 확인해 주세요.', 'error');
       renderAll();
     } catch (e) {
