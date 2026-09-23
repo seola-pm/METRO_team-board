@@ -274,6 +274,46 @@ b.until { background: var(--paper2); color: var(--muted); }
 .link-form { margin-bottom: 14px; padding: 16px; }
 .links-empty { margin: 14px 2px; color: var(--muted); font-size: .88rem; }
 
+
+/* ── 회의: 겹치는 시간 표 ── */
+.meet-stack > * { min-width: 0; }
+.ov-card { padding: 16px; }
+.ov-top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; }
+.ov-top .section-title { margin: 0; }
+.ov-top .section-title small { color: var(--muted); font-weight: 600; }
+.ov-sum { margin: 10px 0 4px; font-size: .88rem; font-weight: 800; }
+.ov-sum.none { color: var(--muted); font-weight: 700; }
+.ov-runs { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 12px; }
+.ov-run { padding: 6px 11px; border: 1px solid #b9d3b0; border-radius: 999px; background: #eef6ea; color: #3d5c3a; font-size: .8rem; font-weight: 800; cursor: pointer; }
+.ov-run.part { border-color: var(--line); background: var(--paper2); color: var(--ink); }
+.ov-run.sel { background: #436341; border-color: #436341; color: #fff; }
+.ov-more { align-self: center; color: var(--muted); font-size: .78rem; }
+.ov-detail { margin-bottom: 12px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; background: #fff; }
+.ov-detail.hint { color: var(--muted); font-size: .85rem; }
+.ov-detail .cand-head { margin-bottom: 8px; }
+.ov-detail .dlg-warn { margin-top: 8px; }
+.ov-scroll { overflow: auto; max-height: 640px; border: 1px solid var(--line); border-radius: 12px; background: #fff; }
+.ov-grid { display: grid; grid-template-columns: 54px repeat(var(--n), minmax(42px, 1fr)); min-width: calc(54px + var(--n) * 42px); }
+.ov-corner, .ov-day { position: sticky; top: 0; z-index: 3; padding: 7px 2px; border-bottom: 1px solid var(--line); background: var(--paper); color: var(--muted); font-size: .72rem; font-weight: 800; line-height: 1.3; text-align: center; }
+.ov-corner { left: 0; z-index: 4; }
+.ov-day.we { color: #8a5a64; }
+.ov-day.today { background: #f7e7e9; color: #85505b; }
+.ov-time { position: sticky; left: 0; z-index: 2; height: 20px; padding-right: 7px; border-right: 1px solid var(--line); background: var(--paper); color: var(--muted); font-size: .68rem; line-height: 20px; text-align: right; }
+.ov-cell { height: 20px; padding: 0; border: 0; border-right: 1px solid #f1e6db; border-bottom: 1px solid #f1e6db; background: #fff; color: #436341; font: inherit; font-size: .64rem; font-weight: 850; line-height: 20px; cursor: pointer; }
+.ov-cell.hr, .ov-time.hr { border-bottom-color: var(--line); }
+.ov-cell.l1 { background: #eef6e9; }
+.ov-cell.l2 { background: #d7ebce; }
+.ov-cell.l3 { background: #a9d19a; color: #2f4a2d; }
+.ov-cell.all { background: #436341; color: #fff; }
+.ov-cell.meet { box-shadow: inset 4px 0 0 #d48a98; }
+.ov-cell:hover { outline: 1.5px solid var(--brand2); outline-offset: -1.5px; }
+.ov-cell.sel { outline: 2px solid var(--brand); outline-offset: -2px; }
+.lg-ov1 { background: #eef6e9; box-shadow: inset 0 0 0 1px #d7e6cf; }
+.lg-ov2 { background: #a9d19a; }
+.lg-ovall { background: #436341; }
+.lg-ovmeet { background: #fff; box-shadow: inset 4px 0 0 #d48a98, inset 0 0 0 1px var(--line); }
+.ov-legend { margin: 4px 0 10px; }
+
 /* 키보드로 이동할 때 위치가 보이게 */
 a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible, summary:focus-visible { outline: 2px solid var(--brand2); outline-offset: 2px; }
 
@@ -349,7 +389,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 (() => {
   'use strict';
 
-  const VERSION = '2026-09-22-1';
+  const VERSION = '2026-09-23-1';
   const NEED_ADMIN_VERSION = 4;   // 이 홈페이지가 필요로 하는 관리용 코드(metro-admin.gs) 버전
   const C = window.METRO_CONFIG || {};
   const MAIN_URL = String(C.API_URL || '').trim();
@@ -399,6 +439,8 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
     features: {},          // 관리용 연결에서 켜진 기능 (디스코드 공지, 구글 캘린더)
     notifyDiscord: true,   // 확정·수정·취소할 때 디스코드에도 알릴지
     showAllCand: false,
+    overlapOpen: false,    // 회의 화면의 '겹치는 시간 표'가 열려 있는지
+    ovSel: null,           // 표에서 누른 칸 { key, s, e }
   };
 
   /* ───────── 날짜·시간 도우미 ───────── */
@@ -963,7 +1005,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 
   function renderMeet() {
     const root = $('#meet');
-    const head = header('회의 시간 찾기', '참여자를 고르면 가능한 시간을 계산하고 바로 확정합니다');
+    const head = header('회의 시간 찾기', '참여자를 고르면 겹치는 시간을 표로 보거나, 가능한 시간을 계산해 바로 확정합니다');
     const draft = readMeetForm() || state.meetDraft;
     const openPicker = $('#mtPicker')?.open;
     if (!state.hasData) { root.innerHTML = head + placeholder(); return; }
@@ -981,8 +1023,9 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
         <div class="field span-2"><label for="mtTo">확인 종료일</label><input id="mtTo" type="date" value="${dateKey(addDays(n, 14))}" required></div>
         <div class="field span-2"><label for="mtDayStart">하루 시작 시간</label><select id="mtDayStart">${timeOptions(0, 1410, 600)}</select></div>
         <div class="field span-2"><label for="mtDayEnd">하루 종료 시간</label><select id="mtDayEnd">${timeOptions(30, 1440, 1440)}</select></div>
-        <div class="span-12 form-actions"><button class="primary" type="submit">후보 시간 찾기</button></div>
+        <div class="span-12 form-actions"><button class="ghost" type="button" data-overlap>겹치는 시간 표로 보기</button><button class="primary" type="submit">후보 시간 찾기</button></div>
       </div></form>
+      <section id="overlap"></section>
       <section id="candidates" class="candidate-wrap"></section>
       <section class="card meet-cal">
         <div class="page-head cal-title"><div><h2>확정 회의 캘린더</h2><p>${mb.getFullYear()}년 ${mb.getMonth() + 1}월 · 회의를 누르면 공지문 다시 보기와 수정을 할 수 있어요</p></div>${monthNav('meet', mb)}</div>
@@ -996,7 +1039,112 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
     </div>`;
     applyMeetDraft(draft);
     if (openPicker) $('#mtPicker').open = true;
+    renderOverlap();
     renderCandidates();
+  }
+
+  /* ───────── 회의: 겹치는 시간 표 ─────────
+   * 위 폼에서 고른 사람·기간·하루 시간을 그대로 써요.
+   * 칸 하나는 30분이고, 칸 안 숫자는 그 30분에 되는 사람 수예요. 고른 사람이 전원 되면 가장 진하게 칠해요.
+   * 표가 열려 있는 동안 사람이나 기간을 바꾸면 바로 다시 계산돼요. */
+  const OV_STEP = 30;
+
+  function renderOverlap() {
+    const box = $('#overlap');
+    if (!box) return;
+    if (!state.overlapOpen) { box.innerHTML = ''; return; }
+    const oldScroll = $('.ov-scroll', box);
+    const keep = oldScroll ? [oldScroll.scrollLeft, oldScroll.scrollTop] : null;
+    const d = readMeetForm() || state.meetDraft || {};
+    const names = d.names || [];
+    const top = sub => `<div class="ov-top"><h2 class="section-title">겹치는 시간 표 ${sub ? `<small>${sub}</small>` : ''}</h2><button type="button" class="ghost" data-overlap-close>표 닫기</button></div>`;
+    const fail = msg => { box.innerHTML = `<div class="card ov-card">${top('')}<p class="empty">${esc(msg)}</p></div>`; };
+    if (!names.length) return fail('위 참여 인원에서 사람을 한 명 이상 골라 주세요. 고르는 대로 표가 바로 바뀌어요.');
+    const from = keyToDate(d.from), to = keyToDate(d.to);
+    if (!from || !to) return fail('확인 시작일과 종료일을 정해 주세요.');
+    if (to < from) return fail('확인 종료일이 시작일보다 빠를 수 없어요.');
+    if (daysBetween(d.from, d.to) > 62) return fail('기간은 두 달(62일) 안으로 정해 주세요.');
+    const ds = +d.dayStart, de = +d.dayEnd;
+    if (!(de > ds)) return fail('하루 종료 시간이 하루 시작 시간보다 늦어야 해요.');
+
+    const days = [];
+    for (let x = new Date(from); x <= to; x = addDays(x, 1)) days.push(x);
+    const slots = [];
+    for (let s = ds; s < de; s += OV_STEP) slots.push(s);
+    const endOf = s => Math.min(s + OV_STEP, de);
+    const total = names.length;
+    const grid = days.map(day => slots.map(s => slotPeople(names, day, s, endOf(s)).ok.length));
+    let max = 0;
+    grid.forEach(col => col.forEach(n => { if (n > max) max = n; }));
+
+    // 같은 인원이 이어지는 시간을 하나로 묶어요
+    const runsOf = target => {
+      const out = [];
+      days.forEach((day, j) => {
+        let st = null;
+        slots.forEach((s, i) => {
+          const hit = grid[j][i] === target;
+          if (hit && st === null) st = i;
+          if (st !== null && (!hit || i === slots.length - 1)) {
+            const last = hit ? i : i - 1;
+            out.push({ key: dateKey(day), s: slots[st], e: endOf(slots[last]) });
+            st = null;
+          }
+        });
+      });
+      return out;
+    };
+    const sel = state.ovSel;
+    const runLabel = r => { const x = keyToDate(r.key); return `${x.getMonth() + 1}/${x.getDate()}(${DAYS[x.getDay()]}) ${fmtM(r.s)}–${fmtM(r.e)}`; };
+    let summary;
+    if (!max) summary = '<p class="ov-sum none">이 기간·시간에는 고른 사람 중 되는 사람이 아무도 없어요.</p>';
+    else {
+      const runs = runsOf(max);
+      const all = max === total;
+      const LIMIT = 24;
+      summary = `<p class="ov-sum">${all ? `고른 ${total}명 전원 되는 시간 ${runs.length}개` : `전원 겹치는 시간은 없어요 · 가장 많이 겹치는 시간 (${total}명 중 ${max}명)`}</p>`
+        + `<div class="ov-runs">${runs.slice(0, LIMIT).map(r => `<button type="button" class="ov-run${all ? '' : ' part'}${sel && sel.key === r.key && sel.s === r.s && sel.e === r.e ? ' sel' : ''}" data-ov="${r.key}|${r.s}|${r.e}">${esc(runLabel(r))}</button>`).join('')}${runs.length > LIMIT ? `<span class="ov-more">외 ${runs.length - LIMIT}개는 표에서 확인해 주세요</span>` : ''}</div>`;
+    }
+
+    // 누른 칸(또는 위 시간 버튼)의 자세한 내용
+    let detail = '<div class="ov-detail hint">칸이나 위 시간 버튼을 누르면 그 시간에 되는 사람·안 되는 사람과 이유가 여기 나와요.</div>';
+    const selDay = sel ? keyToDate(sel.key) : null;
+    if (selDay && sel.key >= d.from && sel.key <= d.to) {
+      const who = slotPeople(names, selDay, sel.s, sel.e);
+      const mt = state.data.meetings.filter(m => m.date === sel.key && m.start < sel.e && m.end > sel.s);
+      detail = `<div class="ov-detail"><div class="cand-head"><div><strong>${esc(fmtDate(selDay))} ${fmtM(sel.s)}–${fmtM(sel.e)}</strong><span class="cand-sum">${who.ok.length === total ? `<b class="all-ok">고른 ${total}명 전원 가능</b>` : `<b>${total}명 중 ${who.ok.length}명 가능</b>`}</span></div>`
+        + `<button type="button" class="primary" data-ov-fix>이 시간 확정</button></div>`
+        + `<div class="cand-rows">${whoRow('가능', 'ok', who.ok)}${whoRow('불가', 'no', who.no)}${whoRow('확인 필요', 'unknown', who.unknown)}</div>`
+        + (mt.length ? `<p class="dlg-warn">이 시간에 이미 확정된 회의가 있어요: ${esc(mt.map(m => `${m.title} ${fmtM(m.start)}–${fmtM(Math.min(m.end, 1440))}`).join(', '))}</p>` : '')
+        + '</div>';
+    }
+
+    const today = dateKey(new Date());
+    const cols = days.map(day => `<div class="ov-day${[0, 6].includes(day.getDay()) ? ' we' : ''}${dateKey(day) === today ? ' today' : ''}">${day.getMonth() + 1}/${day.getDate()}<br>${DAYS[day.getDay()]}</div>`).join('');
+    const rows = slots.map((s, i) => {
+      const hr = (endOf(s) % 60 === 0) ? ' hr' : '';
+      return `<div class="ov-time${hr}">${s % 60 === 0 ? `${Math.floor(s / 60)}시` : ''}</div>` + days.map((day, j) => {
+        const n = grid[j][i];
+        const key = dateKey(day);
+        const lv = !n ? '' : n === total ? ' all' : ` l${Math.max(1, Math.ceil(n / total * 3))}`;
+        const meet = meetingOverlap(day, s, endOf(s)) ? ' meet' : '';
+        const on = sel && sel.key === key && sel.s <= s && sel.e >= endOf(s) ? ' sel' : '';
+        return `<button type="button" class="ov-cell${lv}${meet}${on}${hr}" data-ov="${key}|${s}|${endOf(s)}" title="${esc(`${fmtShort(key)}(${DAYS[day.getDay()]}) ${fmtM(s)} · ${total}명 중 ${n}명${meet ? ' · 확정 회의 있음' : ''}`)}">${n || ''}</button>`;
+      }).join('');
+    }).join('');
+    const legend = `<div class="legend ov-legend"><span><i class="lg lg-ov1"></i>일부만 가능</span><span><i class="lg lg-ov2"></i>많이 겹침</span><span><i class="lg lg-ovall"></i>고른 사람 전원 가능</span><span><i class="lg lg-ovmeet"></i>이미 확정 회의 있음</span><span>칸 안 숫자 = 되는 사람 수</span></div>`;
+    const sub = `${total}명 · ${fmtShort(d.from)}~${fmtShort(d.to)} · ${fmtM(ds)}–${fmtM(de)} · 한 칸 30분`;
+    box.innerHTML = `<div class="card ov-card">${top(esc(sub))}${summary}${detail}${legend}<div class="ov-scroll"><div class="ov-grid" style="--n:${days.length}"><div class="ov-corner">시간</div>${cols}${rows}</div></div></div>`;
+    if (keep) { const sc = $('.ov-scroll', box); sc.scrollLeft = keep[0]; sc.scrollTop = keep[1]; }
+  }
+
+  function overlapFix(btn) {
+    const d = readMeetForm() || state.meetDraft || {};
+    const sel = state.ovSel;
+    const day = sel && keyToDate(sel.key);
+    if (!day || !d.names?.length) return;
+    const who = slotPeople(d.names, day, sel.s, sel.e);
+    confirmMeeting({ title: (d.title || '').trim() || '회의', date: sel.key, start: sel.s, end: sel.e, members: d.names, place: (d.place || '').trim(), ...who }, btn);
   }
 
   function meetingOverlap(date, s, e) { const k = dateKey(date); return state.data.meetings.some(m => m.date === k && m.start < e && m.end > s); }
@@ -1804,6 +1952,23 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
         return;
       }
       if (t.closest('[data-more-cand]')) { state.showAllCand = true; renderCandidates(); return; }
+      if (t.closest('[data-overlap]')) {
+        state.overlapOpen = true; state.ovSel = null;
+        const pk = $('#mtPicker'); if (pk) pk.open = false;
+        renderOverlap();
+        $('#overlap').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        return;
+      }
+      if (t.closest('[data-overlap-close]')) { state.overlapOpen = false; state.ovSel = null; renderOverlap(); return; }
+      const ovFix = t.closest('[data-ov-fix]');
+      if (ovFix) { if (!ovFix.disabled) overlapFix(ovFix); return; }
+      const ov = t.closest('[data-ov]');
+      if (ov) {
+        const [key, s, e] = ov.dataset.ov.split('|');
+        state.ovSel = { key, s: +s, e: +e };
+        renderOverlap();
+        return;
+      }
       const closeBtn = t.closest('[data-dlg-close]');
       if (closeBtn) { $('#' + closeBtn.dataset.dlgClose).close(); return; }
       const copy = t.closest('[data-copy]');
@@ -1839,7 +2004,11 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
       const picker = t.closest('.picker');
       if (picker) syncPicker(picker.id.replace('Picker', ''));
       if (t.matches('[data-notify]')) { state.notifyDiscord = t.checked; $$('[data-notify]').forEach(x => { x.checked = t.checked; }); }
-      if (t.closest('#meetForm')) state.meetDraft = readMeetForm();
+      if (t.closest('#meetForm')) {
+        state.meetDraft = readMeetForm();
+        // 표가 열려 있으면 사람·기간·하루 시간을 바꾸는 즉시 다시 계산해요
+        if (state.overlapOpen && !t.matches('#mtTitle, #mtPlace, #mtLength, #mtStep')) renderOverlap();
+      }
       if (t.closest('#linkForm')) state.linkDraft = readLinkDraft();
     };
     document.addEventListener('input', saveDraft);
