@@ -202,6 +202,11 @@ button.event.meeting:hover { background: #dccbd1; }
 .dlg-error { margin: 0 20px 10px; padding: 10px 12px; border-radius: 10px; background: #fbe9e5; color: #7a3a33; font-size: .88rem; }
 .dlg-hint { margin: 0 20px 16px; color: var(--muted); font-size: .8rem; line-height: 1.5; }
 .dlg-warn { margin: 0; padding: 10px 12px; border-radius: 10px; background: #fff0e7; color: #7a4a2e; font-size: .85rem; }
+.notice-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.notice-sub { color: var(--muted); font-weight: 500; }
+.text-btn { padding: 2px 4px; border: 0; background: none; color: var(--brand2); font-size: .8rem; font-weight: 700; text-decoration: underline; cursor: pointer; }
+.text-btn[hidden] { display: none; }
+#dlgNotice:focus { outline: 2px solid var(--brand2); outline-offset: 1px; }
 .dlg-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .tool-btn { display: inline-flex; align-items: center; color: var(--ink); font-size: .85rem; font-weight: 700; text-decoration: none; }
 .sheet-dialog .notify-opt { justify-self: start; }
@@ -1286,6 +1291,29 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
     return `📅 ${kind === 'updated' ? '[일정 변경] ' : ''}${m.title} 안내\n\n일시: ${when}\n참석자: ${m.members.join(', ') || '-'}${m.place ? `\n회의 링크/장소: ${m.place}` : ''}\n\n확인 부탁드립니다!`;
   }
 
+  // 직접 고친 공지문은 이 브라우저에 보관해요 (회의 내용이 바뀌면 새 공지문으로 돌아가요)
+  const NOTICE_EDIT_KEY = 'metro-notice-edits';
+  function noticeEditId(m, kind) {
+    const k = kind === 'canceled' ? 'canceled' : kind === 'updated' ? 'updated' : 'normal';
+    return [m.id || '', k, m.title, m.date, m.start, m.end, (m.members || []).join(','), m.place || ''].join('|');
+  }
+  function loadNoticeEdits() {
+    try { return JSON.parse(localStorage.getItem(NOTICE_EDIT_KEY) || '{}') || {}; } catch (e) { return {}; }
+  }
+  function savedNotice(m, kind) { return loadNoticeEdits()[noticeEditId(m, kind)]; }
+  function storeNotice(m, kind, text) {
+    const all = loadNoticeEdits();
+    const id = noticeEditId(m, kind);
+    if (text == null || text === noticeText(m, kind)) delete all[id]; else all[id] = text;
+    try { localStorage.setItem(NOTICE_EDIT_KEY, JSON.stringify(all)); } catch (e) { /* 저장 못 해도 화면에서는 계속 고칠 수 있어요 */ }
+  }
+  // 지금 화면에 보이는 공지문 (직접 고친 내용이 있으면 그 내용)
+  function currentNotice(m, kind) {
+    const box = $('#dlgNotice');
+    if (box && $('#meetingDialog').open && state.dlg?.meeting === m) return box.value;
+    return savedNotice(m, kind) ?? noticeText(m, kind);
+  }
+
   function resultText(json) {
     if (!json) return '';
     const bits = [];
@@ -1330,8 +1358,9 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
       <div class="dlg-body">
         ${msg ? `<p class="dlg-ok">${esc(msg)}</p>` : ''}${warns}
         <dl class="dlg-info"><div><dt>참석자</dt><dd>${esc(m.members.join(', ') || '-')}</dd></div><div><dt>링크/장소</dt><dd>${esc(m.place || '-')}</dd></div></dl>
-        <label class="label" for="dlgNotice">${kind === 'canceled' ? '취소 공지문' : '공지문'}</label>
-        <textarea id="dlgNotice" readonly>${esc(noticeText(m, kind))}</textarea>
+        <div class="notice-head"><label class="label" for="dlgNotice">${kind === 'canceled' ? '취소 공지문' : '공지문'} <span class="notice-sub">· 눌러서 직접 고칠 수 있어요</span></label>
+          <button type="button" class="text-btn" data-dlg="reset-notice"${savedNotice(m, kind) == null ? ' hidden' : ''}>처음 공지문으로 되돌리기</button></div>
+        <textarea id="dlgNotice" spellcheck="false">${esc(savedNotice(m, kind) ?? noticeText(m, kind))}</textarea>
         <div class="dlg-tools">
           ${kind === 'canceled' ? '' : `<a class="ghost tool-btn" href="${esc(gcalUrl(m))}" target="_blank" rel="noopener">📆 내 구글 캘린더에 추가</a>`}
           ${f.discord ? '<button type="button" class="ghost tool-btn" data-dlg="discord">디스코드로 공지 보내기</button>' : ''}
@@ -1414,7 +1443,9 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
     if (!pass) return;
     btn.disabled = true; btn.textContent = '보내는 중…';
     try {
-      await adminRequest({ action: 'notify', pass, notice: discordText(m, kind === 'canceled' ? 'canceled' : kind === 'updated' ? 'updated' : 'view') });
+      const k = kind === 'canceled' ? 'canceled' : kind === 'updated' ? 'updated' : 'view';
+      const text = currentNotice(m, kind).trim() || noticeText(m, k);
+      await adminRequest({ action: 'notify', pass, notice: text + (k === 'canceled' ? '' : `\n📆 [내 구글 캘린더에 추가](${gcalUrl(m)})`) });
       state.adminPass = pass;
       btn.textContent = '디스코드에 보냈어요';
     } catch (e) {
@@ -1949,6 +1980,12 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
         else if (act === 'cancel') cancelMeeting();
         else if (act === 'discord') sendDiscord(dlgBtn);
         else if (act === 'delete') deleteMeeting();
+        else if (act === 'reset-notice') {
+          const { meeting: m, kind } = state.dlg;
+          storeNotice(m, kind, null);
+          $('#dlgNotice').value = noticeText(m, kind);
+          dlgBtn.hidden = true;
+        }
         return;
       }
       if (t.closest('[data-more-cand]')) { state.showAllCand = true; renderCandidates(); return; }
@@ -2011,6 +2048,14 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
       }
       if (t.closest('#linkForm')) state.linkDraft = readLinkDraft();
     };
+    document.addEventListener('input', e => {
+      if (e.target.id === 'dlgNotice' && state.dlg?.meeting) {
+        const { meeting: m, kind } = state.dlg;
+        storeNotice(m, kind, e.target.value);
+        const r = $('[data-dlg="reset-notice"]');
+        if (r) r.hidden = e.target.value === noticeText(m, kind);
+      }
+    });
     document.addEventListener('input', saveDraft);
     document.addEventListener('change', saveDraft);
     document.addEventListener('keydown', e => { if (e.key === 'Escape') $$('.picker[open]').forEach(p => { p.open = false; }); });
