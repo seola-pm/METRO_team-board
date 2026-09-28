@@ -202,6 +202,30 @@ button.event.meeting:hover { background: #dccbd1; }
 .dlg-error { margin: 0 20px 10px; padding: 10px 12px; border-radius: 10px; background: #fbe9e5; color: #7a3a33; font-size: .88rem; }
 .dlg-hint { margin: 0 20px 16px; color: var(--muted); font-size: .8rem; line-height: 1.5; }
 .dlg-warn { margin: 0; padding: 10px 12px; border-radius: 10px; background: #fff0e7; color: #7a4a2e; font-size: .85rem; }
+.meet-cal button.event.meeting[data-drag] { cursor: grab; touch-action: pan-y; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+.event.meeting.dragging { opacity: .35; }
+.drag-ghost { position: fixed; left: 0; top: 0; z-index: 1000; margin: 0; pointer-events: none; box-shadow: 0 8px 20px rgba(60, 40, 30, .25); transform-origin: 0 0; rotate: 2deg; }
+body.is-dragging, body.is-dragging * { cursor: grabbing !important; user-select: none; }
+.meet-cal .day.drop-target { outline: 2px dashed var(--brand2); outline-offset: -2px; background: #fbeee6; }
+.reg-tag { display: inline-block; margin-right: 4px; padding: 0 5px; border-radius: 4px; background: #755447; color: #fff; font-size: .9em; font-weight: 800; line-height: 1.5; vertical-align: 1px; }
+.reg-tag.big { font-size: .7rem; padding: 2px 7px; margin-right: 8px; vertical-align: 3px; }
+.event.meeting.regular { background: #eadfd6; color: #5b3f33; box-shadow: inset 3px 0 0 #755447; }
+.att-tag { color: #3d5c3a; font-weight: 700; }
+.regular-opt { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.regular-opt small { color: var(--muted); }
+.attend { display: grid; gap: 8px; margin-top: 6px; padding: 12px; border: 1px solid var(--line); border-radius: 12px; background: #fffdf9; }
+.att-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.att-head h3 { margin: 0; font-size: .95rem; }
+.att-state { padding: 2px 8px; border-radius: 99px; background: var(--paper2); color: var(--muted); font-size: .75rem; font-weight: 700; }
+.att-state.done { background: #eef6ea; color: #3d5c3a; }
+.att-help { margin: 0; color: var(--muted); font-size: .8rem; }
+.att-list { display: flex; flex-wrap: wrap; gap: 6px; }
+.att-list .member-check { cursor: pointer; }
+.att-list .member-check:has(input:checked) { background: #dcebd6; color: #2f4f2c; }
+.att-more summary { cursor: pointer; color: var(--brand2); font-size: .8rem; font-weight: 700; margin-bottom: 6px; }
+.att-foot { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.att-count { color: var(--muted); font-size: .8rem; }
+.dlg-hint.in { margin: 0; }
 .notice-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .notice-sub { color: var(--muted); font-weight: 500; }
 .text-btn { padding: 2px 4px; border: 0; background: none; color: var(--brand2); font-size: .8rem; font-weight: 700; text-decoration: underline; cursor: pointer; }
@@ -667,6 +691,9 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
         title: rawTitle || '회의', date: st.date, start: s, end: e, status,
         members: splitNames(m.members ?? pick(m, 'members', '참석자', 'attendees')),
         place: String(pick(m, 'place', '회의 링크/장소', '장소', 'link', '링크')).trim(),
+        regular: /정기/.test(String(pick(m, 'kind', '회의 구분'))),
+        attended: splitNames(String(pick(m, 'attended', '출석자')).replace('(출석 없음)', '')),
+        checked: !!String(pick(m, 'attended', '출석자')).trim(),
       });
     });
     out.meetings.sort((a, b) => (a.date + pad(a.start)).localeCompare(b.date + pad(b.start)));
@@ -828,7 +855,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 
   function meetingIndex(m) { return state.data.meetings.indexOf(m); }
 
-  function calendarHtml(base) {
+  function calendarHtml(base, opts = {}) {
     const y = base.getFullYear(), m = base.getMonth();
     const first = new Date(y, m, 1).getDay(), last = new Date(y, m + 1, 0).getDate(), today = dateKey(new Date());
     const leftKeys = new Set(state.data.team.filter(p => baseKind(p) === 'left').map(p => p.key));
@@ -839,10 +866,10 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
       const leaves = state.data.leaves.filter(l => !leftKeys.has(l.key) && !isLongLeave(l) && k >= l.start && k <= l.end);
       const longs = state.data.leaves.filter(l => !leftKeys.has(l.key) && isLongLeave(l) && (k === l.start || k === l.end));
       const meetings = state.data.meetings.filter(mt => mt.date === k);
-      cells.push(`<div class="day${k === today ? ' today' : ''}"><span class="day-num">${d}</span>`
+      cells.push(`<div class="day${k === today ? ' today' : ''}" data-date="${k}"><span class="day-num">${d}</span>`
         + longs.map(l => `<span class="event long" title="${esc(leaveTip(l))}">${esc(l.name)}<small> ${esc(longLabel(l))} ${k === l.start ? '시작' : '마지막 날'}</small></span>`).join('')
         + leaves.map(l => `<span class="event leave${l.kind === 'full' ? '' : ' part'}" title="${esc(leaveTip(l))}">${esc(l.name)}<small> ${esc(l.kind === 'full' ? leaveLabel(l) : rangeText(l.ranges) || leaveLabel(l))}</small></span>`).join('')
-        + meetings.map(mt => `<button type="button" class="event meeting" data-meeting="${meetingIndex(mt)}" title="${esc(mt.title)} — 눌러서 공지문 보기">${fmtM(mt.start)} ${esc(mt.title)}</button>`).join('')
+        + meetings.map(mt => `<button type="button" class="event meeting${mt.regular ? ' regular' : ''}" data-meeting="${meetingIndex(mt)}"${opts.drag ? ' data-drag' : ''} title="${esc(mt.title)} — ${opts.drag ? '눌러서 공지문 보기 · 끌어서 다른 날로 옮기기' : '눌러서 공지문 보기'}">${mt.regular ? '<b class="reg-tag">정기</b>' : ''}${fmtM(mt.start)} ${esc(mt.title)}</button>`).join('')
         + '</div>');
     }
     const mFirst = dateKey(new Date(y, m, 1)), mLast = dateKey(new Date(y, m, last));
@@ -996,7 +1023,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   function readMeetForm() {
     if (!$('#meetForm')) return null;
     return {
-      title: $('#mtTitle').value, names: pickedNames('mt'), place: $('#mtPlace').value,
+      title: $('#mtTitle').value, names: pickedNames('mt'), place: $('#mtPlace').value, regular: !!$('#mtRegular')?.checked,
       length: $('#mtLength').value, step: $('#mtStep').value, from: $('#mtFrom').value, to: $('#mtTo').value,
       dayStart: $('#mtDayStart').value, dayEnd: $('#mtDayEnd').value,
     };
@@ -1006,6 +1033,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
     if (!d) return;
     [['mtTitle', 'title'], ['mtPlace', 'place'], ['mtLength', 'length'], ['mtStep', 'step'], ['mtFrom', 'from'], ['mtTo', 'to'], ['mtDayStart', 'dayStart'], ['mtDayEnd', 'dayEnd']]
       .forEach(([id, k]) => { const el = $('#' + id); if (el && d[k] !== undefined && d[k] !== '') el.value = d[k]; });
+    if (d.regular && $('#mtRegular')) $('#mtRegular').checked = true;
   }
 
   function renderMeet() {
@@ -1022,6 +1050,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
         <div class="field span-6"><label for="mtTitle">회의 이름</label><input id="mtTitle" required placeholder="예: 스토리팀 정기 회의"></div>
         <div class="field span-6"><label for="mtPlace">회의 링크/장소(선택)</label><input id="mtPlace" placeholder="Discord 채널 또는 회의 링크"></div>
         <div class="field span-12"><span class="label">참여 인원</span>${pickerHtml('mt', draft?.names || [])}</div>
+        <label class="notify-opt regular-opt span-12"><input type="checkbox" id="mtRegular"> <b>정기회의</b> <small>2주마다 하는 전원 회의라면 체크해 주세요. 참여도를 따로 계산해요.</small></label>
         <div class="field span-2"><label for="mtLength">회의 길이(분)</label><input id="mtLength" type="number" min="15" step="5" value="60" required></div>
         <div class="field span-2"><label for="mtStep">후보 간격</label><select id="mtStep"><option value="30">30분</option><option value="15">15분</option><option value="60">1시간</option></select></div>
         <div class="field span-2"><label for="mtFrom">확인 시작일</label><input id="mtFrom" type="date" value="${today}" required></div>
@@ -1033,11 +1062,11 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
       <section id="overlap"></section>
       <section id="candidates" class="candidate-wrap"></section>
       <section class="card meet-cal">
-        <div class="page-head cal-title"><div><h2>확정 회의 캘린더</h2><p>${mb.getFullYear()}년 ${mb.getMonth() + 1}월 · 회의를 누르면 공지문 다시 보기와 수정을 할 수 있어요</p></div>${monthNav('meet', mb)}</div>
+        <div class="page-head cal-title"><div><h2>확정 회의 캘린더</h2><p>${mb.getFullYear()}년 ${mb.getMonth() + 1}월 · 회의를 누르면 공지문 다시 보기와 수정, 끌어서 다른 날로 옮길 수 있어요</p></div>${monthNav('meet', mb)}</div>
         <div class="meet-cal-body">
-          <div class="meet-cal-grid">${calendarHtml(mb)}</div>
+          <div class="meet-cal-grid">${calendarHtml(mb, { drag: true })}</div>
           <aside class="month-meetings"><h3>${mb.getMonth() + 1}월 회의 <small>${monthMeetings.length}건</small></h3>
-            ${monthMeetings.map(m => `<button type="button" class="meeting-item${m.date < today ? ' past' : ''}" data-meeting="${meetingIndex(m)}"><span class="mi-date">${esc(fmtDate(keyToDate(m.date)))} ${fmtM(m.start)}–${fmtM(Math.min(m.end, 1440))}</span><strong>${esc(m.title)}</strong><small>${m.members.length ? `${m.members.length}명 · ${esc(m.members.slice(0, 4).join(', '))}${m.members.length > 4 ? ' 외' : ''}` : '참석자 정보 없음'}</small></button>`).join('') || '<p class="empty">이 달에 확정된 회의가 없어요.</p>'}
+            ${monthMeetings.map(m => `<button type="button" class="meeting-item${m.date < today ? ' past' : ''}" data-meeting="${meetingIndex(m)}"><span class="mi-date">${esc(fmtDate(keyToDate(m.date)))} ${fmtM(m.start)}–${fmtM(Math.min(m.end, 1440))}</span><strong>${m.regular ? '<b class="reg-tag">정기</b>' : ''}${esc(m.title)}</strong><small>${m.checked ? `<span class="att-tag">출석 ${m.attended.length}명</span> ` : ''}${m.members.length ? `${m.members.length}명 · ${esc(m.members.slice(0, 4).join(', '))}${m.members.length > 4 ? ' 외' : ''}` : '참석자 정보 없음'}</small></button>`).join('') || '<p class="empty">이 달에 확정된 회의가 없어요.</p>'}
           </aside>
         </div>
       </section>
@@ -1172,7 +1201,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
       for (let s = dayStart; s + duration <= dayEnd; s += step) {
         if (meetingOverlap(day, s, s + duration)) continue;
         const who = slotPeople(d.names, day, s, s + duration);
-        if (who.ok.length || !who.checkable) list.push({ title: d.title.trim() || '회의', date: dateKey(day), start: s, end: s + duration, members: d.names, place: d.place.trim(), ...who });
+        if (who.ok.length || !who.checkable) list.push({ title: d.title.trim() || '회의', date: dateKey(day), start: s, end: s + duration, members: d.names, place: d.place.trim(), regular: !!d.regular, ...who });
       }
     }
     list.sort((a, b) => b.ok.length - a.ok.length || (a.date + pad(a.start)).localeCompare(b.date + pad(b.start)));
@@ -1239,7 +1268,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
       '회의명': m.title, '시작 일시': `${m.date} ${fmtM(m.start)}`, '종료 일시': `${endDate} ${fmtM(m.end % 1440)}`,
       '참석자': m.members.join(', '),
       '관련 팀': [...new Set(m.members.map(nm => personByName(nm)?.team).filter(Boolean))].join(', ') || '전체',
-      '회의 링크/장소': m.place || '', '상태': '확정',
+      '회의 링크/장소': m.place || '', '상태': '확정', '회의 구분': m.regular ? '정기' : '일반',
     };
   }
   function findMeeting(x) { return state.data.meetings.find(m => m.title === x.title && m.date === x.date && m.start === x.start); }
@@ -1252,7 +1281,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
       const payload = meetingPayload(x);
       const json = await adminRequest({ action: 'create', pass, ...notifyFields(x, 'created') }, { meeting: payload });
       state.adminPass = pass;
-      applyResponse(json, { meeting: { title: x.title, start: payload['시작 일시'], end: payload['종료 일시'], members: payload['참석자'], place: x.place, status: '확정' } });
+      applyResponse(json, { meeting: { title: x.title, start: payload['시작 일시'], end: payload['종료 일시'], members: payload['참석자'], place: x.place, status: '확정', kind: payload['회의 구분'] } });
       state.meetResult = null;
       renderMeet(); renderMonth();
       openMeeting(findMeeting(x) || { ...x }, 'created', json);
@@ -1326,6 +1355,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   function openMeeting(m, kind = 'view', json = null) {
     state.dlg = { meeting: m, mode: 'view', kind, extra: resultText(json), warnings: json?.warnings || [] };
     renderMeetingDialog();
+    attendCount();
     const d = $('#meetingDialog');
     if (!d.open) d.showModal();
   }
@@ -1344,17 +1374,18 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
           <div class="field"><label for="edEnd">종료</label><select id="edEnd">${timeOptions(30, 1440, Math.min(m.end, 1440))}</select></div>
           <div class="field full"><span class="label">참석자</span>${pickerHtml('ed', m.members)}</div>
           <div class="field full"><label for="edPlace">회의 링크/장소</label><input id="edPlace" value="${esc(m.place || '')}"></div>
+          <label class="notify-opt regular-opt full"><input type="checkbox" id="edRegular"${m.regular ? ' checked' : ''}> <b>정기회의</b> <small>2주마다 하는 전원 회의</small></label>
           ${state.features.discord ? `<label class="notify-opt full"><input type="checkbox" data-notify${state.notifyDiscord ? ' checked' : ''}> 바뀐 내용을 디스코드에 공지하기</label>` : ''}
         </div>${err}
         <div class="dlg-foot"><button type="button" class="ghost" data-dlg="view">돌아가기</button><span class="grow"></span><button type="submit" class="primary">수정 저장</button></div></form>`;
       return;
     }
-    const base = { created: '회의를 확정 회의 캘린더에 저장했어요.', updated: '회의를 수정했어요. 바뀐 내용으로 공지문을 다시 만들었어요.', canceled: '회의를 취소했어요. 확정 회의 캘린더에서 빠졌어요.' }[kind];
-    const msg = base ? `${base} ${state.dlg.extra || (state.features.discord ? '' : '공지문을 복사해서 팀에 보내 주세요.')}`.trim() : '';
+    const base = { attended: '출석을 저장했어요. 시트의 [참여도] 탭도 새로 계산했어요.', created: '회의를 확정 회의 캘린더에 저장했어요.', updated: '회의를 수정했어요. 바뀐 내용으로 공지문을 다시 만들었어요.', canceled: '회의를 취소했어요. 확정 회의 캘린더에서 빠졌어요.' }[kind];
+    const msg = base ? `${base} ${state.dlg.extra || (state.features.discord || kind === 'attended' ? '' : '공지문을 복사해서 팀에 보내 주세요.')}`.trim() : '';
     const warns = (state.dlg.warnings || []).map(w => `<p class="dlg-warn">${esc(w)}</p>`).join('');
     const canEdit = adminReady() && kind !== 'canceled';
     const f = state.features;
-    d.innerHTML = `<div class="dlg-head"><div><h2>${esc(m.title)}</h2><p>${esc(fmtDate(keyToDate(m.date)))} ${fmtM(m.start)}–${fmtM(Math.min(m.end, 1440))}</p></div>${x}</div>
+    d.innerHTML = `<div class="dlg-head"><div><h2>${m.regular ? '<b class="reg-tag big">정기회의</b>' : ''}${esc(m.title)}</h2><p>${esc(fmtDate(keyToDate(m.date)))} ${fmtM(m.start)}–${fmtM(Math.min(m.end, 1440))}</p></div>${x}</div>
       <div class="dlg-body">
         ${msg ? `<p class="dlg-ok">${esc(msg)}</p>` : ''}${warns}
         <dl class="dlg-info"><div><dt>참석자</dt><dd>${esc(m.members.join(', ') || '-')}</dd></div><div><dt>링크/장소</dt><dd>${esc(m.place || '-')}</dd></div></dl>
@@ -1367,9 +1398,60 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
           <span class="grow"></span><button type="button" class="primary" data-copy="#dlgNotice">공지문 복사</button>
         </div>
         ${canEdit && f.discord ? `<label class="notify-opt"><input type="checkbox" data-notify${state.notifyDiscord ? ' checked' : ''}> 수정·취소하면 디스코드에도 알리기</label>` : ''}
+        ${kind === 'canceled' ? '' : attendanceHtml(m)}
       </div>${err}
       ${kind === 'canceled' ? '' : `<div class="dlg-foot"><button type="button" class="ghost" data-dlg="edit"${canEdit ? '' : ' disabled'}>회의 수정</button><button type="button" class="ghost danger" data-dlg="cancel"${canEdit ? '' : ' disabled'} title="팀에 취소를 알리고 캘린더에서 빼요">회의 취소</button><span class="grow"></span><button type="button" class="text-danger" data-dlg="delete"${canEdit ? '' : ' disabled'} title="잘못 만든 회의를 기록에서 완전히 지워요">삭제</button></div>`}
       ${!adminReady() && kind !== 'canceled' ? `<p class="dlg-hint">회의 수정·취소·삭제가 잠겨 있어요. ${esc(adminLockReason())}</p>` : ''}`;
+  }
+
+  /* ───────── 출석 체크 ───────── */
+
+  function attendReady() { return adminReady() && (+state.src.admin.version || 0) >= 5; }
+
+  function attendanceHtml(m) {
+    const started = m.date < dateKey(new Date()) || (m.date === dateKey(new Date()) && m.start <= new Date().getHours() * 60 + new Date().getMinutes());
+    const status = m.checked ? `<span class="att-state done">체크 완료 · ${m.attended.length}명 출석</span>` : `<span class="att-state">${started ? '아직 체크 안 함' : '회의 전'}</span>`;
+    if (!attendReady()) {
+      return `<section class="attend"><div class="att-head"><h3>출석 체크</h3>${status}</div>
+        <p class="dlg-hint in">${adminReady() ? '출석 체크는 관리용 코드를 버전 5로 새로 배포하면 켜져요.' : esc(adminLockReason())}</p></section>`;
+    }
+    const invited = m.members;
+    const on = n => (m.checked ? m.attended.includes(n) : true);
+    const others = boardPeople().map(p => p.name).filter(n => !invited.includes(n));
+    const extraOn = m.attended.filter(n => !invited.includes(n));
+    others.push(...extraOn.filter(n => !others.includes(n)));
+    const box = (n, checked) => `<label class="member-check"><input type="checkbox" name="attend" value="${esc(n)}"${checked ? ' checked' : ''}>${esc(n)}</label>`;
+    return `<section class="attend"><div class="att-head"><h3>출석 체크</h3>${status}</div>
+      <p class="att-help">${m.checked ? '고칠 게 있으면 체크를 바꾸고 다시 저장하세요.' : '회의가 끝나면 <b>안 온 사람의 체크를 풀고</b> 저장하세요.'}</p>
+      <div class="att-list">${invited.map(n => box(n, on(n))).join('') || '<span class="muted">초대된 사람이 없어요</span>'}</div>
+      ${others.length ? `<details class="att-more"${extraOn.length ? ' open' : ''}><summary>초대 안 됐는데 온 사람 추가</summary><div class="att-list">${others.map(n => box(n, extraOn.includes(n))).join('')}</div></details>` : ''}
+      <div class="att-foot"><button type="button" class="ghost" data-att="all">전원 체크</button><button type="button" class="ghost" data-att="none">전원 해제</button><span class="grow"></span><span class="att-count"></span><button type="button" class="primary" data-att="save">출석 저장</button></div>
+    </section>`;
+  }
+
+  function attendCount() {
+    const el = $('.att-count');
+    if (el) el.textContent = `${$$('[name="attend"]:checked').length}명 체크됨`;
+  }
+
+  async function saveAttendance(btn) {
+    const m = state.dlg.meeting;
+    const names = $$('[name="attend"]:checked').map(x => x.value);
+    if (!names.length && !confirm('아무도 체크하지 않았어요. 출석한 사람이 없는 회의로 저장할까요?')) return;
+    const pass = await askPassword('출석을 저장하려면 관리 비밀번호를 입력해 주세요.');
+    if (!pass) return;
+    btn.disabled = true; btn.textContent = '저장 중…';
+    try {
+      const json = await adminRequest({ action: 'attendance', pass, id: m.id, original: originalOf(m), attended: names });
+      state.adminPass = pass;
+      applyResponse(json);
+      renderMeet(); renderMonth();
+      openMeeting(findMeeting(m) || { ...m, attended: names, checked: true }, 'attended', json);
+    } catch (e) {
+      passFailed(e);
+      btn.disabled = false; btn.textContent = '출석 저장';
+      dlgError(e.message);
+    }
   }
 
   function dlgError(msg) {
@@ -1381,7 +1463,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 
   async function saveEdit() {
     const m = state.dlg.meeting;
-    const upd = { title: $('#edTitle').value.trim(), date: $('#edDate').value, start: +$('#edStart').value, end: +$('#edEnd').value, members: pickedNames('ed'), place: $('#edPlace').value.trim() };
+    const upd = { title: $('#edTitle').value.trim(), date: $('#edDate').value, start: +$('#edStart').value, end: +$('#edEnd').value, members: pickedNames('ed'), place: $('#edPlace').value.trim(), regular: $('#edRegular').checked };
     if (!upd.title || !upd.date) return dlgError('회의 이름과 날짜를 적어 주세요.');
     if (upd.end <= upd.start) return dlgError('종료 시간이 시작 시간보다 늦어야 해요.');
     if (!upd.members.length) return dlgError('참석자를 한 명 이상 골라 주세요.');
@@ -1772,7 +1854,8 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   function adminRequest(body, extra = {}) {
     const url = ADMIN_URL || MAIN_URL;
     if (!url) return Promise.reject(new Error('config.js에 Apps Script 웹 앱 주소를 입력해 주세요.'));
-    return getJson(url, { method: 'POST', body: JSON.stringify({ ...body, ...extra }) });
+    const roster = (state.data?.team || []).filter(p => baseKind(p) !== 'left').map(p => ({ name: p.name, team: p.team || '' }));
+    return getJson(url, { method: 'POST', body: JSON.stringify({ ...body, ...extra, roster }) });
   }
 
   // 쓰기 뒤 돌아온 최신 데이터를 반영해요 (예전 Apps Script가 목록을 안 돌려주면 화면에 직접 더해요)
@@ -1928,7 +2011,100 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   }
 
   // 이벤트는 처음 한 번만 연결해요 (화면을 다시 그려도 중복으로 붙지 않게)
+  /* ───────── 확정 회의 끌어서 옮기기 (마우스는 바로, 휴대폰은 꾹 누른 뒤) ───────── */
+  const drag = { el: null, m: null, ghost: null, over: null, active: false, sx: 0, sy: 0, timer: 0, touch: false, justDropped: 0 };
+
+  function dragStart(e) {
+    const el = e.target instanceof Element ? e.target.closest('.event.meeting[data-drag]') : null;
+    if (!el || (e.pointerType === 'mouse' && e.button !== 0)) return;
+    const m = state.data.meetings[+el.dataset.meeting];
+    if (!m) return;
+    if (e.pointerType === 'mouse') e.preventDefault();   // 끌 때 글자가 선택되지 않게
+    Object.assign(drag, { el, m, active: false, sx: e.clientX, sy: e.clientY, touch: e.pointerType !== 'mouse', over: null });
+    if (drag.touch) drag.timer = setTimeout(() => beginDrag(drag.sx, drag.sy), 350);
+  }
+  function beginDrag(x, y) {
+    if (!drag.el) return;
+    drag.active = true;
+    const r = drag.el.getBoundingClientRect();
+    const g = drag.ghost = drag.el.cloneNode(true);
+    g.className = 'event meeting drag-ghost';
+    g.style.width = r.width + 'px';
+    document.body.appendChild(g);
+    drag.el.classList.add('dragging');
+    document.body.classList.add('is-dragging');
+    if (navigator.vibrate && drag.touch) navigator.vibrate(15);
+    dragMoveTo(x, y);
+  }
+  function dragMoveTo(x, y) {
+    drag.ghost.style.transform = `translate(${x + 8}px, ${y + 8}px)`;
+    const under = document.elementFromPoint(x, y);
+    const day = under ? under.closest('.meet-cal .day[data-date]') : null;
+    if (drag.over && drag.over !== day) drag.over.classList.remove('drop-target');
+    drag.over = day;
+    if (day) day.classList.add('drop-target');
+  }
+  function dragMove(e) {
+    if (!drag.el) return;
+    if (!drag.active) {
+      const far = Math.hypot(e.clientX - drag.sx, e.clientY - drag.sy) > 6;
+      if (drag.touch) { if (far) dragReset(); return; }   // 꾹 누르기 전에 움직이면 그냥 화면 넘기기
+      if (!far) return;
+      beginDrag(e.clientX, e.clientY);
+    }
+    e.preventDefault();
+    dragMoveTo(e.clientX, e.clientY);
+  }
+  function dragReset() {
+    clearTimeout(drag.timer);
+    if (drag.ghost) drag.ghost.remove();
+    if (drag.over) drag.over.classList.remove('drop-target');
+    if (drag.el) drag.el.classList.remove('dragging');
+    document.body.classList.remove('is-dragging');
+    Object.assign(drag, { el: null, m: null, ghost: null, over: null, active: false });
+  }
+  function dragEnd() {
+    if (!drag.el) return;
+    const { m, over, active } = drag;
+    dragReset();
+    if (!active) return;
+    drag.justDropped = Date.now();   // 끌고 난 뒤에 공지문 창이 열리지 않게
+    const to = over?.dataset.date;
+    if (to && to !== m.date) moveMeeting(m, to);
+  }
+
+  async function moveMeeting(m, date) {
+    if (!adminReady()) return showNotice(`회의를 옮기려면 관리용 연결이 필요해요. ${adminLockReason()}`, 'error');
+    const upd = { title: m.title, date, start: m.start, end: m.end, members: m.members, place: m.place || '', regular: !!m.regular };
+    const discord = !!state.features.discord && state.notifyDiscord;
+    const ask = `'${m.title}' 회의를 옮길까요?\n\n${fmtDate(keyToDate(m.date))} → ${fmtDate(keyToDate(date))} (${fmtM(m.start)}–${fmtM(Math.min(m.end, 1440))}, 시간은 그대로)`
+      + (discord ? '\n\n디스코드에도 일정 변경 공지가 올라가요.' : '');
+    if (!confirm(ask)) return;
+    const pass = await askPassword('회의를 옮기려면 관리 비밀번호를 입력해 주세요.');
+    if (!pass) return;
+    showNotice(`'${m.title}' 회의를 옮기는 중…`);
+    try {
+      const json = await adminRequest({ action: 'meeting_update', pass, id: m.id, original: originalOf(m), ...notifyFields(upd, 'updated') }, { meeting: meetingPayload(upd) });
+      state.adminPass = pass;
+      applyResponse(json);
+      renderMeet(); renderMonth();
+      openMeeting(findMeeting(upd) || { ...m, ...upd }, 'updated', json);
+    } catch (e) {
+      passFailed(e);
+      showNotice(`회의를 옮기지 못했어요. ${e.message}`, 'error');
+    }
+  }
+
   function bindEvents() {
+    document.addEventListener('pointerdown', dragStart);
+    document.addEventListener('pointermove', dragMove, { passive: false });
+    document.addEventListener('touchmove', e => { if (drag.active) e.preventDefault(); }, { passive: false });
+    document.addEventListener('pointerup', dragEnd);
+    document.addEventListener('pointercancel', () => { if (!drag.active) dragReset(); });
+    document.addEventListener('contextmenu', e => { if (drag.el) e.preventDefault(); });
+    document.addEventListener('click', e => {
+      if (Date.now() - drag.justDropped < 400) { e.preventDefault(); e.stopPropagation(); return; }
+    }, true);
     document.addEventListener('click', e => {
       const t = e.target instanceof Element ? e.target : null;
       if (!t) return;
@@ -1971,6 +2147,13 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
       if (meeting) { const m = state.data.meetings[+meeting.dataset.meeting]; if (m) openMeeting(m); return; }
       const fix = t.closest('[data-fix]');
       if (fix) { const x = state.meetResult?.[+fix.dataset.fix]; if (x && !fix.disabled) confirmMeeting(x, fix); return; }
+      const attBtn = t.closest('[data-att]');
+      if (attBtn && !attBtn.disabled) {
+        const a = attBtn.dataset.att;
+        if (a === 'save') saveAttendance(attBtn);
+        else { $$('.attend > .att-list [name="attend"]').forEach(b => { b.checked = a === 'all'; }); if (a === 'none') $$('.att-more [name="attend"]').forEach(b => { b.checked = false; }); attendCount(); }
+        return;
+      }
       const dlgBtn = t.closest('[data-dlg]');
       if (dlgBtn && !dlgBtn.disabled) {
         const act = dlgBtn.dataset.dlg;
@@ -2048,6 +2231,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
       }
       if (t.closest('#linkForm')) state.linkDraft = readLinkDraft();
     };
+    document.addEventListener('change', e => { if (e.target.name === 'attend') attendCount(); });
     document.addEventListener('input', e => {
       if (e.target.id === 'dlgNotice' && state.dlg?.meeting) {
         const { meeting: m, kind } = state.dlg;
