@@ -15,7 +15,7 @@
     API_URL: "https://script.google.com/macros/s/AKfycbwywkuWFYE4OBATUIvvlRwhrZIp6_T-QRcQhgCbdvB3i_wkRoLRYXdThMtMu9D7W8S0/exec",
     // 관리용 연결: metro-admin.gs를 새 프로젝트로 배포한 뒤 나오는 웹 앱 주소를 따옴표 안에 붙여 넣으세요.
     // 비어 있으면 휴가 일정은 시트에서 직접 읽고, 회의 수정·취소는 쓸 수 없어요.
-    ADMIN_API_URL: "https://script.google.com/macros/s/AKfycbwL0fQBoBUEuzFJLqgyjjbdU2nlNNUL0LwegB2DSC6nDi9XwjY6Xdr3SP9gGerjtNkv/exec",
+    ADMIN_API_URL: "https://script.google.com/macros/s/AKfycbzVRbYcRfdwy6CZEfW3SI5HPyBLwaT8_Xzsiz0Y4PIi2LhzKRXiUDVm60EmUIYZcHPA/exec",
     // 관리자 시트는 링크 허브에서 관리자에게만 보여요.
     SHEET_URL: "https://docs.google.com/spreadsheets/d/1Ga7YPgjz1HQy1-el6oi8QxruGht3VpaEWPY5ig3Ukq4/edit",
     WORK_FORM_URL: "https://docs.google.com/forms/d/e/1FAIpQLScIoOoNupD-pgA72hhXg-Lz4nRpBj6dly33ygFfoBDneQ0v7g/viewform",
@@ -372,25 +372,59 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   .dlg-foot { flex-wrap: wrap; }
 }
   </style>
+<style>
+#metro-daily{--md-bg:#f7efe4;--md-paper:#fffaf4;--md-ink:#443932;--md-muted:#7f7066;--md-line:#e3d2c2;--md-brand:#755447;--md-soft:#f1e5d9;--md-green:#e6efdf;background:var(--md-bg);color:var(--md-ink);font:14px/1.6 system-ui,"Noto Sans KR",sans-serif;border-radius:12px;overflow:hidden}#metro-daily *{box-sizing:border-box}#metro-daily button,#metro-daily input,#metro-daily select,#metro-daily textarea{font:inherit;color:inherit}#metro-daily .md-top{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;padding:15px 20px;background:var(--md-paper);border-bottom:1px solid var(--md-line)}#metro-daily .md-brand{font-weight:700;display:flex;align-items:center;gap:10px}#metro-daily .md-mark{background:var(--md-brand);color:#fff;padding:4px 10px;border-radius:8px}#metro-daily .md-small{font-size:12px;color:var(--md-muted)}#metro-daily .md-shell{display:grid;grid-template-columns:140px minmax(0,1fr)}#metro-daily nav{padding:14px 8px;background:var(--md-paper);border-right:1px solid var(--md-line)}#metro-daily nav span{display:block;padding:9px 11px;color:var(--md-muted)}#metro-daily nav button{display:block;width:100%;text-align:left;margin:4px 0;border-color:transparent}#metro-daily nav button[aria-pressed=true]{background:var(--md-soft);color:var(--md-brand);font-weight:700}#metro-daily main{padding:22px;min-width:0}#metro-daily h1{font-size:24px;margin:0 0 4px}#metro-daily h2{font-size:16px;margin:0}#metro-daily h3{font-size:14px;margin:0;overflow-wrap:anywhere}#metro-daily p{margin:0}#metro-daily .md-head{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:16px}#metro-daily button{border:1px solid var(--md-line);border-radius:8px;background:var(--md-paper);padding:7px 10px;cursor:pointer}#metro-daily button.md-primary{background:var(--md-brand);color:#fff;border-color:var(--md-brand)}#metro-daily button:disabled{opacity:.55;cursor:default}#metro-daily select,#metro-daily input:not([type=checkbox]),#metro-daily textarea{border:1px solid var(--md-line);border-radius:7px;background:var(--md-paper);padding:7px;max-width:100%;min-width:0}#metro-daily input[type=checkbox]{width:17px;height:17px;accent-color:var(--md-brand)}#metro-daily .md-tabs{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:17px}#metro-daily .md-tabs button[aria-selected=true]{background:var(--md-brand);color:#fff;border-color:var(--md-brand)}#metro-daily .md-grid{display:grid;grid-template-columns:minmax(0,1.12fr) minmax(0,1fr);gap:15px;align-items:start}#metro-daily .md-panel{background:var(--md-paper);border:1px solid var(--md-line);border-radius:12px;padding:16px;min-width:0}#metro-daily .md-title{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:13px}#metro-daily .md-item{padding:14px 0;border-top:1px solid var(--md-line)}#metro-daily .md-item:first-child{padding-top:0;border-top:0}#metro-daily .md-row{display:flex;justify-content:space-between;align-items:start;gap:10px}#metro-daily .md-meta{display:flex;flex-wrap:wrap;gap:5px 9px;font-size:12px;color:var(--md-muted);margin:6px 0 9px}#metro-daily .md-tag{background:var(--md-soft);padding:2px 7px;border-radius:5px;font-size:12px;white-space:nowrap}#metro-daily .md-done{background:var(--md-green);color:#47623d}#metro-daily .md-text{white-space:pre-wrap;overflow-wrap:anywhere}#metro-daily details{margin:8px 0}#metro-daily summary{font-size:12px;color:var(--md-muted);cursor:pointer}#metro-daily .md-check{display:flex;align-items:center;gap:7px;margin:6px 0}#metro-daily .md-check:has(input:checked) span{text-decoration:line-through;color:var(--md-muted)}#metro-daily .md-inputrow{display:flex;gap:6px;margin:9px 0;flex-wrap:wrap}#metro-daily .md-inputrow input{flex:1;min-width:110px}#metro-daily .md-note{display:block;width:100%;margin:9px 0;resize:vertical;min-height:64px}#metro-daily .md-actions{display:flex;justify-content:space-between;align-items:center;gap:7px;flex-wrap:wrap;margin-top:11px}#metro-daily .md-empty{padding:23px 0;color:var(--md-muted)}#metro-daily .md-foot{padding:11px 20px;border-top:1px solid var(--md-line);color:var(--md-muted);font-size:12px}#metro-daily .md-filters{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:17px}#metro-daily .md-group{margin-bottom:14px}#metro-daily .md-feedback{color:var(--md-muted);font-size:12px;margin-bottom:12px}
+@media(max-width:700px){#metro-daily .md-shell{grid-template-columns:1fr}#metro-daily nav{display:flex;align-items:center;flex-wrap:wrap;border-right:0;border-bottom:1px solid var(--md-line);padding:6px}#metro-daily nav button{width:auto;margin:0}#metro-daily nav span{padding:5px;font-size:12px}#metro-daily .md-grid{grid-template-columns:1fr}#metro-daily main{padding:15px}}@media(pointer:coarse){#metro-daily button,#metro-daily select{min-height:44px}#metro-daily input,#metro-daily textarea{font-size:16px}}
+#metro-daily .md-todayitem{background:#eadbca;border:1px solid #d6bfa8;border-radius:11px;padding:15px;margin-bottom:12px}#metro-daily .md-todayitem:first-child{padding-top:15px;border-top:1px solid #d6bfa8}#metro-daily .md-carry{background:#f1dfb9;color:#765425}#metro-daily .md-previewday{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;color:var(--md-muted);font-size:12px;margin-bottom:14px}#metro-daily .md-countcheck{margin-bottom:8px;font-size:12px;color:var(--md-muted)}
+#metro-daily h1,#metro-daily h2,#metro-daily h3{color:#443932!important}#metro-daily .md-check span,#metro-daily .md-text,#metro-daily label{color:var(--md-ink)}#metro-daily .md-overdue{background:#f1dfd3;color:#814e34}
+#metro-daily .md-item h3{font-weight:750!important;border-left:4px solid var(--md-brand);padding:5px 9px;background:#f0e4d6;border-radius:0 5px 5px 0;color:#392b23!important}#metro-daily .md-todayitem h3{background:#dcc4ae}#metro-daily .md-row h3{flex:1}#metro-daily .md-text a{color:#684334!important;font-weight:600;text-decoration:underline;text-underline-offset:3px;overflow-wrap:anywhere}#metro-daily .md-requestbox{padding:12px;background:#f1e7dc;border-radius:8px;margin-top:12px}#metro-daily .md-requestbox label{display:block;margin-top:8px}#metro-daily .md-requestbox select,#metro-daily .md-requestbox input,#metro-daily .md-requestbox textarea{width:100%}#metro-daily .md-error{color:#8b4035;font-size:12px}#metro-daily .md-requestbadge{color:#73503e;font-size:12px;margin-top:7px}
+#metro-daily .md-date-today{color:#32613c!important;background:#e0eedf;padding:3px 7px;border-radius:5px;font-weight:650}#metro-daily .md-date-past{color:#963a35!important;background:#f4dddd;padding:3px 7px;border-radius:5px;font-weight:650}#metro-daily .md-directive{color:#963a35!important;background:#f6e3dd;border-left:3px solid #b66355;padding:10px;margin:10px 0;border-radius:0 7px 7px 0}#metro-daily .md-directive p,#metro-daily .md-directive strong,#metro-daily .md-directive a{color:#963a35!important}#metro-daily .md-returnform{margin-top:12px}#metro-daily .md-returnform textarea{width:100%;min-height:65px}
+#metro-daily .md-leave{display:block;margin:18px 3px 6px;background:#e6d0b8;color:#49352a!important;border:1px solid #c4a080;border-radius:9px;padding:10px;text-align:center;text-decoration:none;font-weight:700}#metro-daily .md-report{width:100%;min-height:130px;resize:vertical;margin:10px 0;white-space:pre-wrap}#metro-daily .md-reportpanel{margin-bottom:16px}#metro-daily .md-viewlinks{display:flex;gap:8px;flex-wrap:wrap;margin-top:15px}#metro-daily .md-viewlinks a{color:var(--md-brand);border:1px solid var(--md-line);border-radius:8px;padding:8px 12px;text-decoration:none}#metro-daily .md-history{margin-top:15px}
+#metro-daily .md-reporttask{background:#e5d1b9;border:2px solid #b58a61;border-radius:12px;padding:15px 17px;margin-bottom:18px}#metro-daily .md-reporttask h2{color:#4c3424!important;font-weight:750!important}#metro-daily .md-reporttask .md-title{margin-bottom:7px}#metro-daily .md-reporttask button{font-weight:650}#metro-daily .md-reportmissing{background:#f4dddd;color:#923b35}#metro-daily .md-reportoptional{background:#ede7df;color:#75695f}#metro-daily .md-reportrow{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:13px 0;border-top:1px solid var(--md-line);flex-wrap:wrap}#metro-daily .md-reportrow:first-child{border-top:0}
+#metro-daily nav button.md-home{padding:14px 12px;margin-bottom:18px;border:1px solid #a67d62;border-radius:11px;background:#eadac8;color:#49352b!important}#metro-daily nav button.md-home[aria-pressed=true]{background:#755447;color:#fffaf4!important;border-color:#755447;box-shadow:0 4px 10px #75544722}#metro-daily .md-home strong{display:block;font-weight:750;color:inherit!important}#metro-daily .md-home small{display:block;margin-top:3px;font-size:11px;color:inherit!important;opacity:.9}#metro-daily nav .md-navlabel{padding:7px 11px 3px;font-size:11px;color:#7f7066;font-weight:650;margin-top:8px}@media(max-width:700px){#metro-daily nav button.md-home{margin:3px 8px 3px 0;padding:9px 14px}#metro-daily nav .md-navlabel{display:none}#metro-daily nav .md-leave{margin:3px 0 3px 8px}}
+
+#metro-daily{border-radius:0;background:transparent;max-width:1320px;margin:auto}
+#metro-daily [hidden]{display:none!important}#metro-daily .md-head{margin-bottom:18px}
+#metro-daily .md-head h1{font-size:28px}#metro-daily .work-login{margin:14px 0 22px;padding:18px}
+#metro-daily .work-login form{display:flex;gap:10px;align-items:end;flex-wrap:wrap}#metro-daily .work-login label{display:grid;gap:5px}
+#metro-daily .work-login input{width:230px}#metro-daily .work-login p{margin-bottom:10px}
+#metro-daily .work-status{margin-bottom:14px;padding:10px 14px;border:1px solid var(--md-line);background:var(--md-paper);border-radius:9px;font-size:12px;display:flex;justify-content:space-between;gap:9px;align-items:center;flex-wrap:wrap}
+#metro-daily .work-status[data-error=true]{background:#fbe9e5;color:#7a3a33;border-color:#dcaaa0}
+#metro-daily .md-grid>.md-panel:first-child{background:#f1e1cf;border-color:#cdb295}
+#metro-daily .work-load{padding:25px;color:var(--md-muted)}
+nav .nav-label{padding:14px 14px 3px;font-size:11px;color:var(--muted);font-weight:700}
+#nav .work-home{background:#eadac8;color:#49352b;border:1px solid #a67d62;margin-bottom:12px}
+#nav .work-home.active{background:#755447;color:#fffaf4}#nav .work-home strong{display:block}#nav .work-home small{display:block;margin-top:3px;font-size:11px;font-weight:500}
+#nav .leave-nav{background:#e6d0b8;color:#49352a;border:1px solid #c4a080;margin-top:16px;text-align:center}
+#scheduleTabs{max-width:1320px;margin:0 auto 18px;display:flex;gap:8px}#scheduleTabs[hidden]{display:none}#scheduleTabs a{background:var(--paper);color:var(--ink);padding:8px 14px;border:1px solid var(--line);border-radius:9px;text-decoration:none;font-size:14px;font-weight:700}#scheduleTabs a.active{background:var(--brand);color:white}
+@media(max-width:900px){#nav{grid-template-columns:repeat(6,1fr)}#nav .nav-label{display:none}#nav .work-home,#nav .leave-nav{margin:0;padding:7px 3px}#nav .work-home small{display:none}#nav a{font-size:11px;display:flex;align-items:center;justify-content:center}#metro-daily .md-head h1{font-size:24px}.sidebar{height:68px}main{padding-bottom:88px}}
+</style>
 </head>
 <body>
   <div class="app">
     <header class="topbar">
-      <a class="brand" href="#today" aria-label="오늘 화면"><span class="brand-mark">M</span><span>METRO Team Board</span></a>
+      <a class="brand" href="#my" aria-label="내 작업 화면"><span class="brand-mark">M</span><span>METRO Team Board</span></a>
       <div class="sync"><span id="todayLabel"></span><button id="syncStatus" class="sync-status" type="button" data-state="loading" aria-live="polite"><span class="sync-word">불러오는 중</span></button><button id="refreshBtn" type="button">새로고침</button></div>
     </header>
     <aside class="sidebar">
-      <nav id="nav" aria-label="주요 메뉴">
-        <a href="#today" data-view="today">오늘</a><a href="#week" data-view="week">이번 주</a><a href="#month" data-view="month">이번 달</a><a href="#meet" data-view="meet">회의</a><a href="#team" data-view="team">팀 명단</a><a href="#links" data-view="links">링크 허브</a>
-      </nav>
+      <nav id="nav" aria-label="주요 메뉴"><a href="#my" data-view="my" class="work-home"><strong>내 작업</strong><small>하루의 시작</small></a><span class="nav-label">팀 공간</span><a href="#today" data-view="schedule">팀 일정</a><a href="#meet" data-view="meet">회의</a><a href="#links" data-view="links">링크 허브</a><span class="nav-label">운영</span><a href="#director" data-view="director">디렉터</a><a class="leave-nav" href="https://docs.google.com/forms/d/e/1FAIpQLSe6T11sDoQKH7q5KqlhPFRLSgvoEIrhNppqYDP3GI3XBCIr4g/viewform" target="_blank" rel="noopener noreferrer">휴가 신청 ↗</a></nav>
     </aside>
     <main id="main">
       <div id="notice" class="notice" hidden></div>
-      <section id="today" class="view"></section>
+      <div id="scheduleTabs" hidden><a href="#today">오늘</a><a href="#week">이번 주</a><a href="#month">이번 달</a></div>
+<div id="metro-daily">
+<div id="md-sync" class="work-status" aria-live="polite"><span id="md-syncmessage">에픽 작업을 불러오는 중…</span><div><button type="button" id="md-retry" hidden>저장 재시도</button><button type="button" id="md-refresh">작업 새로고침</button></div></div>
+<section id="my" class="view"><div class="md-head"><div><h1 id="md-heading">내 작업</h1><p class="md-small" id="md-subtitle"></p></div><label id="md-personlabel">내 이름 <select id="md-person" aria-label="내 이름"><option value="">불러오는 중</option></select></label></div>
+<div id="md-memberlogin" class="md-panel work-login"><h2>내 작업 시작하기</h2><p class="md-small">본인 이름을 선택하고 팀에서 공유한 작업 저장 비밀번호를 입력해주세요.</p><form id="md-memberform"><label>팀원용 비밀번호<input id="md-memberpin" type="password" autocomplete="off" required></label><button type="submit" class="md-primary">내 작업 열기</button></form></div>
+<div id="md-my" hidden><div class="md-tabs" role="tablist" aria-label="내 작업 보기"><button type="button" role="tab" data-tab="today" aria-selected="true">오늘 할 일</button><button type="button" role="tab" data-tab="all" aria-selected="false">전체 배정작업</button><button type="button" role="tab" data-tab="done" aria-selected="false">완료기록</button></div><section id="md-dailyreport" class="md-reporttask"></section><div id="md-mycontent"></div></div><div class="md-actions"><p class="md-small" id="md-memberhint"></p><button type="button" id="md-logout" hidden>내 작업 잠그기</button></div></section>
+<section id="director" class="view" hidden><div class="md-head"><div><h1>디렉터</h1><p class="md-small">완료 등록 · 마감 지난 작업 · 팀원 요청 · 데일리 리포트</p></div><button type="button" id="md-adminlogout" hidden>디렉터 잠그기</button></div>
+<div id="md-directorlogin" class="md-panel work-login"><h2>디렉터 확인</h2><p class="md-small">기존 관리 비밀번호로 팀원 기록을 확인할 수 있어요.</p><form id="md-adminform"><label>관리 비밀번호<input id="md-adminpin" type="password" autocomplete="off" required></label><button type="submit" class="md-primary">디렉터 화면 열기</button></form></div>
+<div id="md-director" hidden><div class="md-tabs" role="tablist" aria-label="디렉터 확인 항목"><button type="button" role="tab" data-reviewtab="completed" aria-selected="true">완료 등록</button><button type="button" role="tab" data-reviewtab="overdue" aria-selected="false">마감 지난 작업</button><button type="button" role="tab" data-reviewtab="requests" aria-selected="false">팀원 요청</button><button type="button" role="tab" data-reviewtab="dailyreports" aria-selected="false">데일리 리포트</button><button type="button" role="tab" data-reviewtab="team" aria-selected="false">팀 명단</button></div><div class="md-filters"><label>팀원 <select id="md-reviewperson"><option value="">전체 팀원</option></select></label></div><p class="md-feedback" id="md-feedback" aria-live="polite"></p><div id="md-reviewlist"></div><div id="md-teamcontainer" hidden><section id="team"></section></div></div></section></div>
+<section id="today" class="view" hidden></section>
       <section id="week" class="view" hidden></section>
       <section id="month" class="view" hidden></section>
       <section id="meet" class="view" hidden></section>
-      <section id="team" class="view" hidden></section>
+
       <section id="links" class="view" hidden></section>
     </main>
   </div>
@@ -418,7 +452,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 (() => {
   'use strict';
 
-  const VERSION = '2026-09-23-1';
+  const VERSION = '2026-09-30-work-1';
   const NEED_ADMIN_VERSION = 4;   // 이 홈페이지가 필요로 하는 관리용 코드(metro-admin.gs) 버전
   const C = window.METRO_CONFIG || {};
   const MAIN_URL = String(C.API_URL || '').trim();
@@ -1974,10 +2008,16 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   }
 
   function route() {
-    const id = (location.hash || '#today').slice(1);
-    state.view = document.getElementById(id)?.classList.contains('view') ? id : 'today';
-    $$('.view').forEach(v => { v.hidden = v.id !== state.view; });
-    $$('#nav a').forEach(a => a.classList.toggle('active', a.dataset.view === state.view));
+    const hash=(location.hash||'#my').slice(1);
+    const id=hash==='team'?'director':hash==='schedule'?'today':hash;
+    state.view=document.getElementById(id)?.classList.contains('view')?id:'my';
+    $$('.view').forEach(v=>{v.hidden=v.id!==state.view;});
+    $('#metro-daily').hidden=!['my','director'].includes(state.view);
+    const scheduled=['today','week','month'].includes(state.view);
+    $('#scheduleTabs').hidden=!scheduled;
+    $$('#scheduleTabs a').forEach(a=>a.classList.toggle('active',a.hash==='#'+state.view));
+    $$('#nav a').forEach(a=>a.classList.toggle('active',a.dataset.view===(scheduled?'schedule':state.view)));
+    window.dispatchEvent(new CustomEvent('metro:route',{detail:{view:state.view,team:hash==='team'}}));
   }
 
   function isBusy() {
@@ -2258,5 +2298,248 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   setInterval(() => { if (!document.hidden && !isBusy()) load({ quiet: true }); }, REFRESH_MS);
 })();
   </script>
+<script>
+(()=>{
+'use strict';
+const root=document.getElementById('metro-daily'),q=s=>root.querySelector(s),api=window.METRO_CONFIG.ADMIN_API_URL;
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const seoulDay=()=>new Intl.DateTimeFormat('sv-SE',{timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+let tasks=[],people=[],person='',tab='today',view='my',reviewTab='completed',today=seoulDay(),memberPass='',adminPass='',loadedPerson='',directorLoaded=false,busy=false,pendingWrite=null,loading=false,revision=0;
+const states=new Map(),plans=new Map(),records=[],notes={},checks={},checkDrafts={},requestDrafts={},requests=[],returnDrafts={},returnErrors={},dailyReports={},checkActivity={},dirtyNotes={};
+let requestOpen=null,returnOpen=null;
+const key=t=>t.id,pk=t=>person+'|'+key(t),valid=s=>/^\d{4}-\d{2}-\d{2}$/.test(s),owners=t=>t.owners.split(/[,、\n]/).map(x=>x.trim()),mine=()=>tasks.filter(t=>owners(t).includes(person)&&t.status!=='완료'),reported=t=>records.find(r=>r.person===person&&r.key===key(t)&&!r.cancelled&&!r.returned);
+function status(message,error=false){q('#md-syncmessage').textContent=message;q('#md-sync').dataset.error=String(error);q('#md-retry').hidden=!pendingWrite;}
+function setDisabled(){
+ const locked=busy||!!pendingWrite;
+ root.setAttribute('aria-busy',String(busy));
+ q('#md-person').disabled=locked||!people.length;
+ root.querySelectorAll('#md-my [data-action],#md-my input,#md-my textarea,#md-my select,#md-director [data-action],#md-director [data-check]').forEach(el=>{
+   el.disabled=locked||(el.dataset.action==='add'&&plans.get(person+'|'+el.dataset.key)===today);
+ });
+ q('#md-refresh').disabled=locked;q('#md-retry').disabled=busy;
+ root.querySelectorAll('.work-login input,.work-login button').forEach(el=>el.disabled=busy||!!pendingWrite);
+ q('#md-logout').disabled=locked;q('#md-adminlogout').disabled=locked;
+}
+function rebuild(){
+ plans.clear();records.length=0;requests.length=0;
+ for(const obj of [notes,checks,dailyReports,checkActivity])Object.keys(obj).forEach(k=>delete obj[k]);
+ states.forEach((s,p)=>{
+  Object.entries(s.plans||{}).forEach(([k,d])=>plans.set(p+'|'+k,d));
+  Object.entries(s.notes||{}).forEach(([k,n])=>notes[p+'|'+k]=n);
+  Object.entries(s.checks||{}).forEach(([k,a])=>checks[p+'|'+k]=a);
+  records.push(...(s.records||[]));requests.push(...(s.requests||[]));
+  Object.entries(s.dailyReports||{}).forEach(([d,w])=>dailyReports[d+'|'+p]=w);
+  Object.entries(s.checkActivity||{}).forEach(([k,v])=>checkActivity[p+'|'+k]=v);
+ });
+ Object.assign(notes,dirtyNotes);
+}
+function applyData(data){
+ if(Array.isArray(data.tasks))tasks=data.tasks;
+ if(data.today)today=data.today;
+ if(Array.isArray(data.states)){states.clear();data.states.forEach(s=>states.set(s.person,s));directorLoaded=true;}
+ if(data.state)states.set(data.state.person,data.state);
+ rebuild();updatePeople(data.people);
+}
+function updatePeople(list){
+ const next=[...new Set([...(list||[]),...tasks.flatMap(owners),...states.keys()])].filter(Boolean).sort((a,b)=>a.localeCompare(b,'ko'));
+ people=next;
+ if(!person){let stored='';try{stored=localStorage.getItem('metro-work-person')||'';}catch{}person=next.includes(stored)?stored:next.includes('설아')?'설아':next[0]||'';}
+ if(!next.includes(person)&&person)next.push(person);
+ const filter=q('#md-reviewperson').value;
+ q('#md-person').innerHTML=next.map(p=>`<option value="${esc(p)}">${esc(p)}</option>`).join('');q('#md-person').value=person;
+ q('#md-reviewperson').innerHTML='<option value="">전체 팀원</option>'+next.map(p=>`<option value="${esc(p)}">${esc(p)}</option>`).join('');q('#md-reviewperson').value=next.includes(filter)?filter:'';
+}
+async function jsonRequest(body){
+ const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),35000);
+ try{
+  const response=await fetch(body?api:api+'?mode=work',{method:body?'POST':'GET',cache:'no-store',credentials:'omit',redirect:'follow',signal:controller.signal,...(body?{body:JSON.stringify(body),headers:{'Content-Type':'text/plain;charset=UTF-8'}}:{})});
+  const text=await response.text();let data;
+  try{data=JSON.parse(text);}catch{throw new Error('데이터 대신 다른 화면을 받았어요. 웹 앱 배포 주소와 액세스 권한을 확인해주세요.');}
+  if(!data.ok){const err=new Error(data.error||'시트 연결에 실패했어요.');err.definitive=true;throw err;}
+  if(!data.workVersion&&!(data.duplicate===true&&data.state&&body?.requestId))throw new Error('개인 작업 연결 코드가 배포되지 않았어요. 최신 코드의 웹 앱 주소를 확인해주세요.');
+  return data;
+ }catch(err){if(err.name==='AbortError')throw new Error('응답을 기다리는 시간이 길어졌어요.');if(err instanceof TypeError)throw new Error('웹 앱에 접속하지 못했어요. 인터넷 연결과 웹 앱 배포 권한을 확인해주세요.');throw err;}
+ finally{clearTimeout(timer);}
+}
+function requestId(){return typeof crypto!=='undefined'&&crypto.randomUUID?crypto.randomUUID():Date.now().toString(36)+'_'+Math.random().toString(36).slice(2);}
+async function mutate(action,fields={},onSuccess){
+ if(busy||pendingWrite)return;
+ const director=['review','return','request_handle'].includes(action);
+ const body={action:'work_'+action,person,requestId:requestId(),...fields,...(director?{pass:adminPass}:{memberPass})};
+ if(!(director?adminPass:memberPass)){status('먼저 비밀번호로 화면을 열어주세요.',true);return;}
+ pendingWrite={body,onSuccess};await submitPending();
+}
+async function submitPending(){
+ if(!pendingWrite||busy)return;
+ busy=true;revision++;status('시트에 저장하는 중…');setDisabled();
+ const pending=pendingWrite;
+ try{
+  const data=await jsonRequest(pending.body);
+  pendingWrite=null;if(pending.onSuccess)pending.onSuccess(data);
+  applyData(data);
+  status('시트에 저장됐어요. · '+today);
+ }catch(err){
+  if(err.definitive)pendingWrite=null;
+  status(err.message+(pendingWrite?' 저장 여부가 아직 확인되지 않았으니 ‘저장 재시도’를 눌러주세요.':''),true);
+  if(err.definitive&&/비밀번호/.test(err.message)){
+   if(pending.body.pass){adminPass='';directorLoaded=false;}else{memberPass='';loadedPerson='';}
+  }
+ }finally{busy=false;render();setDisabled();}
+}
+async function refresh(quiet=false){
+ if(busy||pendingWrite||loading)return;
+ if(quiet&&root.contains(document.activeElement)&&['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName))return;
+ const initialRevision=revision,initialView=view;loading=true;if(!quiet)status('에픽 작업과 개인 기록을 불러오는 중…');
+ try{
+  let data;
+  if(view==='director'&&adminPass){data=await jsonRequest({action:'work_director',pass:adminPass});}
+  else if(memberPass&&person){data=await jsonRequest({action:'work_read',person,memberPass});loadedPerson=person;}
+  else{data=await jsonRequest();if(data.ready===false)throw new Error('관리자시트에서 METRO_연결준비를 한 번 실행해주세요.');}
+  if(initialRevision!==revision||initialView!==view)return;
+  applyData(data);status('에픽시트 연결됨 · '+today+' · 1분마다 갱신');render();
+ }catch(err){status(err.message,true);if(err.definitive&&/비밀번호/.test(err.message)){if(view==='director'){adminPass='';directorLoaded=false;}else{memberPass='';loadedPerson='';}render();}}
+ finally{loading=false;setDisabled();}
+}
+const selectedToday=k=>plans.get(k)===today;
+const unfinishedLabel=k=>{const d=plans.get(k);if(!d||d>=today)return '';const previous=new Date(today+'T00:00:00Z');previous.setUTCDate(previous.getUTCDate()-1);return d===previous.toISOString().slice(0,10)?'어제 선택 · 미완료':d.slice(5).replace('-','/')+' 선택 · 미완료';};
+function linkText(value){const text=String(value||'');let out='',last=0;const re=/https?:\/\/[^\s<>"']+/g;let m;while((m=re.exec(text))){let url=m[0].replace(/[.,;!?，。)\]}]+$/g,'');out+=esc(text.slice(last,m.index));out+=`<a href="${esc(url)}" target="_blank" rel="noopener noreferrer">${url.includes('discord.com/channels/')?'디스코드 메시지 열기 ↗':esc(url)+' ↗'}</a>`;out+=esc(m[0].slice(url.length));last=m.index+m[0].length;}return out+esc(text.slice(last));}
+function requestDraft(t){const k=pk(t);return requestDrafts[k]||(requestDrafts[k]={type:'마감일 연장 요청',date:'',note:'',error:''});}
+function requestForm(t){if(requestOpen!==pk(t))return '';const d=requestDraft(t);return `<section class="md-requestbox"><h3>디렉터에게 요청</h3><label>요청 종류<select data-requesttype="${esc(key(t))}">${['마감일 연장 요청','더 디테일한 작업 지시 요청','기타 요청'].map(x=>`<option ${d.type===x?'selected':''}>${esc(x)}</option>`).join('')}</select></label>${d.type==='마감일 연장 요청'?`<label>희망 마감일<input type="date" data-requestdate="${esc(key(t))}" value="${esc(d.date)}" min="${today}"></label>`:''}<label>요청 내용<textarea class="md-note" data-requestnote="${esc(key(t))}" placeholder="필요한 내용과 이유를 적어주세요.">${esc(d.note)}</textarea></label>${d.error?`<p class="md-error" role="alert">${esc(d.error)}</p>`:''}<div class="md-actions"><button type="button" data-action="closerequest">취소</button><button type="button" class="md-primary" data-action="sendrequest" data-key="${esc(key(t))}">요청 등록</button></div></section>`;}
+function taskCard(t,mode){const k=key(t),pkey=pk(t),r=reported(t),due=valid(t.due)?t.due+' 마감':'마감일 미등록';const list=checks[pkey]||[];const feedback=records.filter(x=>x.person===person&&x.key===k&&x.returned&&!x.cancelled).slice(-1)[0];
+return `<article class="md-item ${mode==='today'?'md-todayitem':''}"><div class="md-row"><h3>${esc(t.title)}</h3>${r?'<span class="md-tag md-done">완료 등록됨</span>':unfinishedLabel(pkey)?`<span class="md-tag md-carry">${esc(unfinishedLabel(pkey))}</span>`:''}</div><div class="md-meta"><span>${esc(due)}</span><span>시트 상태: ${esc(t.status||'미등록')}</span>${t.owners.includes(',')?`<span>공동 담당: ${esc(t.owners)}</span>`:''}</div><details><summary>작업 내용 보기</summary><p class="md-text">${linkText(t.todo||'내용 미등록')}</p>${t.memo?`<p class="md-small md-text">${linkText(t.memo)}</p>`:''}</details>${feedback?`<div class="md-directive"><strong>디렉터 재작업 요청 · ${esc(feedback.returnDate)}</strong><p class="md-text">${linkText(feedback.feedback)}</p></div>`:''}${mode==='today'?`<p class="md-countcheck">작게 나눈 할 일 ${list.filter(c=>c.done).length}/${list.length}</p>${list.map((c,i)=>`<label class="md-check"><input type="checkbox" data-check="${esc(k)}" data-i="${i}" ${c.done?'checked':''}><span>${esc(c.text)}</span></label>`).join('')}<div class="md-inputrow"><input type="text" data-checkdraft="${esc(k)}" value="${esc(checkDrafts[pkey]||'')}" placeholder="작게 나눌 할 일 추가" aria-label="체크리스트 항목" maxlength="150"><button type="button" data-action="addcheck" data-key="${esc(k)}">추가</button></div><label class="md-small">완료 메모 / 결과물 링크<textarea class="md-note" data-note="${esc(k)}" placeholder="완료한 내용과 결과물 링크를 적어주세요.">${esc(notes[pkey]||'')}</textarea></label><div class="md-actions"><button type="button" data-action="savenote" data-key="${esc(k)}">메모 저장</button><button type="button" data-action="remove" data-key="${esc(k)}">오늘 목록에서 빼기</button><button type="button" class="md-primary" data-action="complete" data-key="${esc(k)}">내 작업 완료</button></div>`:`<div class="md-actions"><span class="md-small">${r?'디렉터 확인 '+(r.reviewed?'완료':'대기'):selectedToday(pkey)?'오늘 할 일에 담김':''}</span>${r?'':`<button type="button" data-action="add" data-key="${esc(k)}" ${selectedToday(pkey)?'disabled':''}>+ 오늘 할 일</button>`}</div>`}<div class="md-actions"><span class="md-requestbadge">${requests.filter(x=>x.person===person&&x.key===k&&!x.handled).length?'디렉터 확인 대기 중인 요청이 있어요':''}</span><button type="button" data-action="openrequest" data-key="${esc(k)}">디렉터에게 요청</button></div>${requestForm(t)}</article>`;
+}
+function completionCard(r,director){const status=r.returned?'재작업 요청':r.reviewed?'시트 반영 확인됨':'시트 반영 대기';const dateClass=r.date===today?'md-date-today':!r.reviewed&&!r.returned&&r.date<today?'md-date-past':'';
+return `<article class="md-item"><div class="md-row"><h3>${esc(r.title)}</h3><span class="md-tag ${r.reviewed?'md-done':''}">${status}</span></div><div class="md-meta"><span class="${dateClass}">${esc(r.date)} 완료 등록</span><span>${esc(r.person)}</span></div><p class="md-small md-text">${esc(r.todo)}</p>${r.note?`<p class="md-text" style="margin-top:8px">${linkText(r.note)}</p>`:'<p class="md-small">완료 메모 없음</p>'}${r.returned?`<div class="md-directive"><strong>디렉터 피드백 · ${esc(r.returnDate)}</strong><p class="md-text">${linkText(r.feedback)}</p></div>`:''}<div class="md-actions"><span class="md-small">${r.returned?'배정작업으로 돌아감':r.reviewed?'반영 확인 표시됨':'팀원이 완료로 등록한 작업'}</span>${director&&!r.returned?`<div><button type="button" data-action="review" data-record="${r.id}">${r.reviewed?'반영 확인 취소':'시트 반영 확인'}</button> ${!r.reviewed?`<button type="button" data-action="openreturn" data-record="${r.id}">피드백 / 재작업 요청</button>`:''}</div>`:''}</div>${director&&returnOpen===r.id?`<div class="md-returnform"><label>추가 메모 / 작업 지시<textarea class="md-note" data-returnnote="${r.id}" placeholder="다시 작업해야 할 내용과 이유를 적어주세요.">${esc(returnDrafts[r.id]||'')}</textarea></label>${returnErrors[r.id]?`<p class="md-error" role="alert">${esc(returnErrors[r.id])}</p>`:''}<div class="md-actions"><button type="button" data-action="closereturn">취소</button><button type="button" class="md-primary" data-action="returnwork" data-record="${r.id}">재작업 요청 보내기</button></div></div>`:''}</article>`;}
+
+function activity(p){const completed=records.filter(r=>r.person===p&&r.date===today&&!r.cancelled).length;const checked=Object.values(checkActivity).filter(a=>a.person===p&&a.date===today&&a.done).length;return {completed,checked,hasWork:completed>0||checked>0};}
+function reportStatus(p){const a=activity(p),written=!!dailyReports[today+'|'+p];return {a,written,label:written?'작성 완료':a.hasWork?'미작성':'작성 불필요',css:written?'md-done':a.hasWork?'md-reportmissing':'md-reportoptional'};}
+function render(){
+  q('#md-my').hidden=!memberPass||loadedPerson!==person;
+  q('#md-memberlogin').hidden=!!memberPass&&loadedPerson===person;
+  q('#md-director').hidden=!adminPass||!directorLoaded;
+  q('#md-directorlogin').hidden=!!adminPass&&directorLoaded;
+  q('#md-logout').hidden=!memberPass;q('#md-adminlogout').hidden=!adminPass;
+  q('#md-subtitle').textContent=(person?person+'님, ':'')+'오늘 할 일을 골라보세요. · '+today;
+  q('#md-memberhint').textContent=memberPass?'작업은 관리자시트에 저장됩니다. 데일리 리포트 표시는 본인이 작성한 뒤 눌러주세요.':'';
+const ds=reportStatus(person);q('#md-dailyreport').innerHTML=`<div class="md-title"><h2>데일리 리포트 작성하기</h2><span class="md-tag ${ds.css}">${ds.label}</span></div><div class="md-actions"><span class="md-small">${ds.a.hasWork?'오늘 작업 기록이 있어요':'오늘 작업 기록 없음 · 작성 선택'}</span><button type="button" class="${ds.written?'':'md-primary'}" data-action="dailyreport">${ds.written?'작성 완료 표시 취소':'작성 완료로 표시'}</button></div>`;
+root.querySelectorAll('[data-tab]').forEach(b=>b.setAttribute('aria-selected',String(b.dataset.tab===tab)));
+const assigned=mine().filter(t=>!reported(t)),focus=assigned.filter(t=>selectedToday(pk(t))&&!reported(t)),myrecords=records.filter(r=>r.person===person&&!r.cancelled).slice().reverse();
+if(tab==='today')q('#md-mycontent').innerHTML=`<div class="md-grid"><section class="md-panel"><div class="md-title"><h2>오늘 할 일</h2><span class="md-small">${focus.length}개</span></div>${focus.length?focus.map(t=>taskCard(t,'today')).join(''):'<p class="md-empty">오른쪽에서 오늘 할 작업을 골라 담아주세요.</p>'}</section><section class="md-panel"><div class="md-title"><h2>전체 배정작업</h2><span class="md-small">${assigned.length}개</span></div>${assigned.map(t=>taskCard(t,'assigned')).join('')||'<p class="md-empty">배정된 작업이 없어요.</p>'}</section></div>`;
+if(tab==='all')q('#md-mycontent').innerHTML=`<section class="md-panel"><div class="md-title"><h2>전체 배정작업</h2><span class="md-small">${assigned.length}개</span></div>${assigned.map(t=>taskCard(t,'assigned')).join('')||'<p class="md-empty">배정된 작업이 없어요.</p>'}</section>`;
+if(tab==='done'){
+const completedToday=myrecords.filter(r=>r.date===today&&!r.returned),older=myrecords.filter(r=>r.date!==today||r.returned);const reportText=completedToday.map((r,i)=>`${i+1}. ${r.title}${r.todo?'\n   작업 내용: '+r.todo.trim().replace(/\n/g,'\n   '):''}${r.note?'\n   완료 메모: '+r.note.trim().replace(/\n/g,'\n   '):''}${r.checklist&&r.checklist.length?'\n   완료한 세부 작업: '+r.checklist.join(', '):''}`).join('\n\n');
+q('#md-mycontent').innerHTML=`<section class="md-panel md-reportpanel"><div class="md-title"><h2>오늘 완료 등록 · ${today}</h2><span class="md-small">${completedToday.length}개</span></div>${completedToday.length?`<label class="md-small" for="md-reporttext">데일리 리포트에 옮길 완료 내용</label><textarea id="md-reporttext" class="md-report" readonly>${esc(reportText)}</textarea><div class="md-actions"><span id="md-copystatus" class="md-small" aria-live="polite">완료 등록 내용 기준 · 디렉터 검토 전</span><button type="button" class="md-primary" data-action="copyreport">오늘 완료 내용 복사</button></div>`:'<p class="md-empty">오늘 완료 등록한 작업이 없어요.</p>'}</section><section class="md-panel"><div class="md-title"><h2>오늘의 완료기록</h2></div>${completedToday.map(r=>completionCard(r,false)).join('')||'<p class="md-small">작업을 완료 등록하면 여기에 모입니다.</p>'}${older.length?`<details class="md-history"><summary>이전 기록 / 재작업 요청 기록 · ${older.length}개</summary>${older.map(r=>completionCard(r,false)).join('')}</details>`:''}</section>`;
+}
+
+const date=today,filter=q('#md-reviewperson').value;
+root.querySelectorAll('[data-reviewtab]').forEach(b=>b.setAttribute('aria-selected',String(b.dataset.reviewtab===reviewTab)));
+if(reviewTab==='completed'){
+const review=records.filter(r=>!r.cancelled&&(!filter||r.person===filter)).slice().sort((a,b)=>Number(a.reviewed||a.returned)-Number(b.reviewed||b.returned)||a.date.localeCompare(b.date));q('#md-feedback').textContent=`완료 등록 ${review.length}개 · 시트 반영 대기 ${review.filter(r=>!r.reviewed&&!r.returned).length}개`;
+q('#md-reviewlist').innerHTML=review.length?[...new Set(review.map(r=>r.person))].map(p=>`<section class="md-panel md-group"><div class="md-title"><h2>${esc(p)}</h2><span class="md-small">완료 ${review.filter(r=>r.person===p).length}개</span></div>${review.filter(r=>r.person===p).map(r=>completionCard(r,true)).join('')}</section>`).join(''):'<p class="md-empty">아직 팀원이 완료 등록한 작업이 없습니다.</p>';
+}else if(reviewTab==='overdue'){
+const overdue=tasks.filter(t=>t.status!=='완료'&&valid(t.due)&&t.due<date&&(!filter||t.owners.split(/[,、]/).map(s=>s.trim()).includes(filter))&&!records.some(r=>r.key===key(t)&&!r.cancelled&&!r.returned)).sort((a,b)=>a.due.localeCompare(b.due));
+q('#md-feedback').textContent=`${date} 기준 · 마감 지난 미완료 ${overdue.length}개 · 당일 마감과 마감일 미등록 제외`;
+q('#md-reviewlist').innerHTML=overdue.length?[...new Set(overdue.map(t=>t.owners))].map(p=>`<section class="md-panel md-group"><div class="md-title"><h2>${esc(p)}</h2><span class="md-small">마감 경과 ${overdue.filter(t=>t.owners===p).length}개</span></div>${overdue.filter(t=>t.owners===p).map(t=>{const days=Math.round((Date.parse(date+'T00:00:00Z')-Date.parse(t.due+'T00:00:00Z'))/86400000);return `<article class="md-item"><div class="md-row"><h3>${esc(t.title)}</h3><span class="md-tag md-overdue">${days}일 경과</span></div><div class="md-meta"><span>담당 ${esc(t.owners)}</span><span>마감 ${esc(t.due)}</span><span>시트 상태: ${esc(t.status||'미등록')}</span></div><p class="md-text">${esc(t.todo||'내용 미등록')}</p></article>`;}).join('')}</section>`).join(''):'<p class="md-empty">마감일이 지난 미완료 작업이 없습니다.</p>';
+}else if(reviewTab==='requests'){
+const items=requests.filter(r=>r.created<=date&&(!filter||r.person===filter)).slice().sort((a,b)=>Number(a.handled)-Number(b.handled)||b.created.localeCompare(a.created));q('#md-feedback').textContent=`확인 대기 ${items.filter(r=>!r.handled).length}개 · 확인한 요청 ${items.filter(r=>r.handled).length}개`;
+q('#md-reviewlist').innerHTML=items.length?items.map(r=>`<section class="md-panel md-group"><div class="md-title"><h2>${esc(r.person)} · ${esc(r.type)}</h2><span class="md-tag ${r.handled?'md-done':''}">${r.handled?'확인 완료':'확인 대기'}</span></div><article class="md-item"><h3>${esc(r.title)}</h3><div class="md-meta"><span>요청일 ${r.created}</span>${r.date?`<span>희망 마감일 ${esc(r.date)}</span><span>기존 마감일 ${esc((tasks.find(t=>key(t)===r.key)||{}).due||'미등록')}</span>`:''}</div><p class="md-text">${linkText(r.note)}</p><div class="md-actions"><span class="md-small">원본 변경은 디렉터가 확인 후 진행</span><button type="button" data-action="handlerequest" data-request="${r.id}">${r.handled?'확인 취소':'요청 확인 완료'}</button></div></article></section>`).join(''):'<p class="md-empty">등록된 요청이 없습니다.</p>';
+}else if(reviewTab==='dailyreports'){const rows=people.filter(p=>!filter||p===filter);const missing=rows.filter(p=>{const st=reportStatus(p);return st.a.hasWork&&!st.written;});q('#md-feedback').textContent=today+' · 작성 필요하지만 미작성 '+missing.length+'명';q('#md-reviewlist').innerHTML='<section class="md-panel">'+rows.map(p=>{const st=reportStatus(p);return `<div class="md-reportrow"><div><h3>${esc(p)}</h3><p class="md-small">${st.a.hasWork?'오늘 완료 등록 '+st.a.completed+'개 · 체크 완료 '+st.a.checked+'개':'오늘 작업 기록 없음'}</p></div><span class="md-tag ${st.css}">${st.label}</span></div>`;}).join('')+'</section>';}else{q('#md-feedback').textContent='팀 명단 · 일정 제출과 참여 현황';q('#md-reviewlist').innerHTML='';}
+q('#md-teamcontainer').hidden=reviewTab!=='team';q('#md-reviewperson').closest('.md-filters').hidden=reviewTab==='team';
+setDisabled();
+
+
+}
+root.addEventListener('click',e=>{
+ const b=e.target.closest('button');if(!b||b.disabled)return;
+ if(b.dataset.tab){tab=b.dataset.tab;render();return;}
+ if(b.dataset.reviewtab){reviewTab=b.dataset.reviewtab;render();return;}
+ const a=b.dataset.action;if(!a)return;
+ const t=tasks.find(t=>key(t)===b.dataset.key);
+ if(a==='copyreport'){
+  const field=q('#md-reporttext');const fallback=()=>{field.focus();field.select();q('#md-copystatus').textContent='내용을 선택했어요. 직접 복사해주세요.';};
+  if(navigator.clipboard?.writeText)navigator.clipboard.writeText(field.value).then(()=>{if(q('#md-copystatus'))q('#md-copystatus').textContent='오늘 완료 내용 복사됨';}).catch(fallback);else fallback();return;
+ }
+ if(a==='openrequest'&&t){requestOpen=pk(t);requestDraft(t);render();return;}
+ if(a==='closerequest'){requestOpen=null;render();return;}
+ if(a==='openreturn'){returnOpen=b.dataset.record;render();return;}
+ if(a==='closereturn'){returnOpen=null;render();return;}
+ if(busy||pendingWrite)return;
+ if(a==='dailyreport'){mutate('report',{written:!dailyReports[today+'|'+person]});return;}
+ if(a==='add'&&t){mutate('plan',{taskId:key(t),selected:true});return;}
+ if(a==='remove'&&t){mutate('plan',{taskId:key(t),selected:false});return;}
+ if(a==='addcheck'&&t){addCheck(t);return;}
+ if(a==='savenote'&&t){saveNote(key(t),pk(t));return;}
+ if(a==='complete'&&t){mutate('complete',{taskId:key(t),note:notes[pk(t)]||''},()=>{delete dirtyNotes[pk(t)];});return;}
+ if(a==='sendrequest'&&t){
+  const d=requestDraft(t);
+  if(!d.note.trim()){d.error='요청 내용을 적어주세요.';render();return;}
+  if(d.type==='마감일 연장 요청'&&(!valid(d.date)||d.date<today||(valid(t.due)&&d.date<=t.due))){d.error='현재 마감일보다 뒤이며 오늘 이후인 희망 마감일을 선택해주세요.';render();return;}
+  mutate('request',{taskId:key(t),type:d.type,date:d.date,note:d.note},()=>{requestOpen=null;delete requestDrafts[pk(t)];});return;
+ }
+ if(a==='review'||a==='returnwork'){
+  const r=records.find(r=>r.id===b.dataset.record);if(!r)return;
+  if(a==='review'){mutate('review',{person:r.person,taskId:r.key,recordId:r.id,reviewed:!r.reviewed});return;}
+  const text=(returnDrafts[r.id]||'').trim();if(!text){returnErrors[r.id]='다시 작업할 내용을 적어주세요.';render();return;}
+  mutate('return',{person:r.person,taskId:r.key,recordId:r.id,feedback:text},()=>{returnOpen=null;delete returnDrafts[r.id];});return;
+ }
+ if(a==='handlerequest'){const r=requests.find(r=>r.id===b.dataset.request);if(r)mutate('request_handle',{person:r.person,targetRequestId:r.id,handled:!r.handled});}
+});
+function addCheck(t){const k=pk(t),text=(checkDrafts[k]||'').trim();if(!text)return;mutate('check_add',{taskId:key(t),text},()=>{checkDrafts[k]='';});}
+root.addEventListener('input',e=>{
+ const el=e.target,d=el.dataset;
+ if(d.returnnote){returnDrafts[d.returnnote]=el.value;returnErrors[d.returnnote]='';}
+ if(d.requestnote){const t=tasks.find(t=>key(t)===d.requestnote);if(t)requestDraft(t).note=el.value;}
+ if(d.requestdate){const t=tasks.find(t=>key(t)===d.requestdate);if(t)requestDraft(t).date=el.value;}
+ if(d.note){const k=person+'|'+d.note;notes[k]=el.value;dirtyNotes[k]=el.value;}
+ if(d.checkdraft)checkDrafts[person+'|'+d.checkdraft]=el.value;
+});
+root.addEventListener('change',e=>{
+ const el=e.target,d=el.dataset;
+ if(d.requesttype){const t=tasks.find(t=>key(t)===d.requesttype);if(t){requestDraft(t).type=el.value;requestDraft(t).error='';render();}}
+ if(d.requestdate){const t=tasks.find(t=>key(t)===d.requestdate);if(t)requestDraft(t).date=el.value;}
+ if(d.check){const item=(checks[person+'|'+d.check]||[])[Number(d.i)];if(item)mutate('check_set',{taskId:d.check,checkId:item.id,done:el.checked});}
+ if(el.id==='md-reviewperson')render();
+});
+function saveNote(taskId,k){if(busy||pendingWrite||!Object.prototype.hasOwnProperty.call(dirtyNotes,k))return;const value=dirtyNotes[k];mutate('note',{taskId,note:value},()=>{if(dirtyNotes[k]===value)delete dirtyNotes[k];});}
+root.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.dataset.checkdraft){e.preventDefault();const t=tasks.find(t=>key(t)===e.target.dataset.checkdraft);if(t&&!busy&&!pendingWrite)addCheck(t);}});
+q('#md-person').addEventListener('change',e=>{
+ if(busy||pendingWrite)return;
+ person=e.target.value;requestOpen=null;
+ try{localStorage.setItem('metro-work-person',person);}catch{}
+ loadedPerson='';render();if(memberPass)refresh();
+});
+q('#md-memberform').addEventListener('submit',async e=>{
+ e.preventDefault();if(busy||loading||pendingWrite)return;if(!person){status('이름 목록을 불러온 뒤 본인 이름을 선택해주세요.',true);return;}
+ const pin=q('#md-memberpin').value;busy=true;status('개인 기록을 불러오는 중…');setDisabled();
+ try{const data=await jsonRequest({action:'work_read',person,memberPass:pin});memberPass=pin;loadedPerson=person;q('#md-memberpin').value='';applyData(data);status('내 작업 연결됨 · '+today);}
+ catch(err){status(err.message,true);}finally{busy=false;render();}
+});
+q('#md-adminform').addEventListener('submit',async e=>{
+ e.preventDefault();if(busy||loading||pendingWrite)return;
+ const pin=q('#md-adminpin').value;busy=true;status('팀원 기록을 불러오는 중…');setDisabled();
+ try{const data=await jsonRequest({action:'work_director',pass:pin});adminPass=pin;applyData(data);q('#md-adminpin').value='';status('디렉터 연결됨 · '+today);}
+ catch(err){status(err.message,true);}finally{busy=false;render();}
+});
+q('#md-logout').addEventListener('click',()=>{
+ if(busy||pendingWrite)return;
+ memberPass='';loadedPerson='';Object.keys(dirtyNotes).forEach(k=>delete dirtyNotes[k]);
+ if(!adminPass)states.clear();rebuild();render();status('내 작업을 잠갔어요.');
+});
+q('#md-adminlogout').addEventListener('click',()=>{
+ if(busy||pendingWrite)return;adminPass='';directorLoaded=false;
+ for(const p of states.keys())if(p!==person||!memberPass)states.delete(p);
+ rebuild();render();status('디렉터 화면을 잠갔어요.');
+});
+q('#md-retry').addEventListener('click',submitPending);
+q('#md-refresh').addEventListener('click',()=>refresh());
+document.getElementById('refreshBtn').addEventListener('click',()=>refresh());
+window.addEventListener('metro:route',e=>{const next=e.detail.view==='director'?'director':'my';const changed=next!==view;view=next;if(e.detail.team)reviewTab='team';render();if(changed)refresh(true);});
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)refresh(true);});
+window.addEventListener('beforeunload',e=>{if(pendingWrite||Object.keys(dirtyNotes).length){e.preventDefault();e.returnValue='';}});
+setInterval(()=>{if(!document.hidden)refresh(true);},60000);
+view=(location.hash==='#director'||location.hash==='#team')?'director':'my';render();refresh();
+})();
+
+</script>
 </body>
 </html>
