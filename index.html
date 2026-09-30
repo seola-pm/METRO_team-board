@@ -399,7 +399,13 @@ nav .nav-label{padding:14px 14px 3px;font-size:11px;color:var(--muted);font-weig
 #scheduleTabs{max-width:1320px;margin:0 auto 18px;display:flex;gap:8px}#scheduleTabs[hidden]{display:none}#scheduleTabs a{background:var(--paper);color:var(--ink);padding:8px 14px;border:1px solid var(--line);border-radius:9px;text-decoration:none;font-size:14px;font-weight:700}#scheduleTabs a.active{background:var(--brand);color:white}
 @media(max-width:900px){#nav{grid-template-columns:repeat(6,1fr)}#nav .nav-label{display:none}#nav .work-home,#nav .leave-nav{margin:0;padding:7px 3px}#nav .work-home small{display:none}#nav a{font-size:11px;display:flex;align-items:center;justify-content:center}#metro-daily .md-head h1{font-size:24px}.sidebar{height:68px}main{padding-bottom:88px}}
 </style>
-</head>
+<style>
+#nav .nav-label{display:flex;align-items:center;gap:8px;margin-top:15px;margin-bottom:7px;padding:0 6px;color:#685044;font-size:12px;letter-spacing:.06em}
+#nav .nav-label b{font-weight:850;white-space:nowrap}#nav .nav-label>span{height:1px;flex:1;background:#cdb8a7}
+#nav>a:not(.work-home):not(.leave-nav){margin-left:8px;padding-left:13px;border-left:2px solid #e4d5c8;border-radius:0 9px 9px 0}
+#nav>a.active:not(.work-home):not(.leave-nav){border-left-color:#755447}
+@media(max-width:900px){#nav .nav-label{display:none}#nav>a:not(.work-home):not(.leave-nav){margin:0;padding:7px 3px;border-left:0;border-radius:9px}}
+</style></head>
 <body>
   <div class="app">
     <header class="topbar">
@@ -407,7 +413,7 @@ nav .nav-label{padding:14px 14px 3px;font-size:11px;color:var(--muted);font-weig
       <div class="sync"><span id="todayLabel"></span><button id="syncStatus" class="sync-status" type="button" data-state="loading" aria-live="polite"><span class="sync-word">불러오는 중</span></button><button id="refreshBtn" type="button">새로고침</button></div>
     </header>
     <aside class="sidebar">
-      <nav id="nav" aria-label="주요 메뉴"><a href="#my" data-view="my" class="work-home"><strong>내 작업</strong><small>하루의 시작</small></a><span class="nav-label">팀 공간</span><a href="#today" data-view="schedule">팀 일정</a><a href="#meet" data-view="meet">회의</a><a href="#links" data-view="links">링크 허브</a><span class="nav-label">운영</span><a href="#director" data-view="director">디렉터</a><a class="leave-nav" href="https://docs.google.com/forms/d/e/1FAIpQLSe6T11sDoQKH7q5KqlhPFRLSgvoEIrhNppqYDP3GI3XBCIr4g/viewform" target="_blank" rel="noopener noreferrer">휴가 신청 ↗</a></nav>
+      <nav id="nav" aria-label="주요 메뉴"><a href="#my" data-view="my" class="work-home"><strong>내 작업</strong><small>하루의 시작</small></a><span class="nav-label" role="heading" aria-level="2"><b>팀 공간</b><span></span></span><a href="#today" data-view="schedule">팀 일정</a><a href="#meet" data-view="meet">회의</a><a href="#links" data-view="links">링크 허브</a><span class="nav-label" role="heading" aria-level="2"><b>운영</b><span></span></span><a href="#director" data-view="director">디렉터</a><a class="leave-nav" href="https://docs.google.com/forms/d/e/1FAIpQLSe6T11sDoQKH7q5KqlhPFRLSgvoEIrhNppqYDP3GI3XBCIr4g/viewform" target="_blank" rel="noopener noreferrer">휴가 신청 ↗</a></nav>
     </aside>
     <main id="main">
       <div id="notice" class="notice" hidden></div>
@@ -415,8 +421,8 @@ nav .nav-label{padding:14px 14px 3px;font-size:11px;color:var(--muted);font-weig
 <div id="metro-daily">
 <div id="md-sync" class="work-status" aria-live="polite"><span id="md-syncmessage">에픽 작업을 불러오는 중…</span><div><button type="button" id="md-retry" hidden>저장 재시도</button><button type="button" id="md-refresh">작업 새로고침</button></div></div>
 <section id="my" class="view"><div class="md-head"><div><h1 id="md-heading">내 작업</h1><p class="md-small" id="md-subtitle"></p></div><label id="md-personlabel">내 이름 <select id="md-person" aria-label="내 이름"><option value="">불러오는 중</option></select></label></div>
-<div id="md-memberlogin" class="md-panel work-login"><h2>내 작업 시작하기</h2><p class="md-small">본인 이름을 선택하고 팀에서 공유한 작업 저장 비밀번호를 입력해주세요.</p><form id="md-memberform"><label>팀원용 비밀번호<input id="md-memberpin" type="password" autocomplete="off" required></label><button type="submit" class="md-primary">내 작업 열기</button></form></div>
-<div id="md-my" hidden><div class="md-tabs" role="tablist" aria-label="내 작업 보기"><button type="button" role="tab" data-tab="today" aria-selected="true">오늘 할 일</button><button type="button" role="tab" data-tab="all" aria-selected="false">전체 배정작업</button><button type="button" role="tab" data-tab="done" aria-selected="false">완료기록</button></div><section id="md-dailyreport" class="md-reporttask"></section><div id="md-mycontent"></div></div><div class="md-actions"><p class="md-small" id="md-memberhint"></p><button type="button" id="md-logout" hidden>내 작업 잠그기</button></div></section>
+<div id="md-memberlogin" class="md-panel work-login"><h2>내 작업 시작하기</h2><p class="md-small">오른쪽 위에서 본인 이름을 선택해주세요.</p></div>
+<div id="md-my" hidden><div class="md-tabs" role="tablist" aria-label="내 작업 보기"><button type="button" role="tab" data-tab="today" aria-selected="true">오늘 할 일</button><button type="button" role="tab" data-tab="all" aria-selected="false">전체 배정작업</button><button type="button" role="tab" data-tab="done" aria-selected="false">완료기록</button></div><section id="md-dailyreport" class="md-reporttask"></section><div id="md-mycontent"></div></div><div class="md-actions"><p class="md-small" id="md-memberhint"></p></div></section>
 <section id="director" class="view" hidden><div class="md-head"><div><h1>디렉터</h1><p class="md-small">완료 등록 · 마감 지난 작업 · 팀원 요청 · 데일리 리포트</p></div><button type="button" id="md-adminlogout" hidden>디렉터 잠그기</button></div>
 <div id="md-directorlogin" class="md-panel work-login"><h2>디렉터 확인</h2><p class="md-small">기존 관리 비밀번호로 팀원 기록을 확인할 수 있어요.</p><form id="md-adminform"><label>관리 비밀번호<input id="md-adminpin" type="password" autocomplete="off" required></label><button type="submit" class="md-primary">디렉터 화면 열기</button></form></div>
 <div id="md-director" hidden><div class="md-tabs" role="tablist" aria-label="디렉터 확인 항목"><button type="button" role="tab" data-reviewtab="completed" aria-selected="true">완료 등록</button><button type="button" role="tab" data-reviewtab="overdue" aria-selected="false">마감 지난 작업</button><button type="button" role="tab" data-reviewtab="requests" aria-selected="false">팀원 요청</button><button type="button" role="tab" data-reviewtab="dailyreports" aria-selected="false">데일리 리포트</button><button type="button" role="tab" data-reviewtab="team" aria-selected="false">팀 명단</button></div><div class="md-filters"><label>팀원 <select id="md-reviewperson"><option value="">전체 팀원</option></select></label></div><p class="md-feedback" id="md-feedback" aria-live="polite"></p><div id="md-reviewlist"></div><div id="md-teamcontainer" hidden><section id="team"></section></div></div></section></div>
@@ -452,7 +458,7 @@ nav .nav-label{padding:14px 14px 3px;font-size:11px;color:var(--muted);font-weig
 (() => {
   'use strict';
 
-  const VERSION = '2026-09-30-work-1';
+  const VERSION = '2026-09-30-work-2';
   const NEED_ADMIN_VERSION = 4;   // 이 홈페이지가 필요로 하는 관리용 코드(metro-admin.gs) 버전
   const C = window.METRO_CONFIG || {};
   const MAIN_URL = String(C.API_URL || '').trim();
@@ -2304,7 +2310,7 @@ nav .nav-label{padding:14px 14px 3px;font-size:11px;color:var(--muted);font-weig
 const root=document.getElementById('metro-daily'),q=s=>root.querySelector(s),api=window.METRO_CONFIG.ADMIN_API_URL;
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const seoulDay=()=>new Intl.DateTimeFormat('sv-SE',{timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
-let tasks=[],people=[],person='',tab='today',view='my',reviewTab='completed',today=seoulDay(),memberPass='',adminPass='',loadedPerson='',directorLoaded=false,busy=false,pendingWrite=null,loading=false,revision=0;
+let tasks=[],people=[],person='',tab='today',view='my',reviewTab='completed',today=seoulDay(),adminPass='',loadedPerson='',directorLoaded=false,busy=false,pendingWrite=null,loading=false,revision=0;
 const states=new Map(),plans=new Map(),records=[],notes={},checks={},checkDrafts={},requestDrafts={},requests=[],returnDrafts={},returnErrors={},dailyReports={},checkActivity={},dirtyNotes={};
 let requestOpen=null,returnOpen=null;
 const key=t=>t.id,pk=t=>person+'|'+key(t),valid=s=>/^\d{4}-\d{2}-\d{2}$/.test(s),owners=t=>t.owners.split(/[,、\n]/).map(x=>x.trim()),mine=()=>tasks.filter(t=>owners(t).includes(person)&&t.status!=='완료'),reported=t=>records.find(r=>r.person===person&&r.key===key(t)&&!r.cancelled&&!r.returned);
@@ -2312,13 +2318,13 @@ function status(message,error=false){q('#md-syncmessage').textContent=message;q(
 function setDisabled(){
  const locked=busy||!!pendingWrite;
  root.setAttribute('aria-busy',String(busy));
- q('#md-person').disabled=locked||!people.length;
+ q('#md-person').disabled=locked||loading||!people.length;
  root.querySelectorAll('#md-my [data-action],#md-my input,#md-my textarea,#md-my select,#md-director [data-action],#md-director [data-check]').forEach(el=>{
    el.disabled=locked||(el.dataset.action==='add'&&plans.get(person+'|'+el.dataset.key)===today);
  });
  q('#md-refresh').disabled=locked;q('#md-retry').disabled=busy;
  root.querySelectorAll('.work-login input,.work-login button').forEach(el=>el.disabled=busy||!!pendingWrite);
- q('#md-logout').disabled=locked;q('#md-adminlogout').disabled=locked;
+ q('#md-adminlogout').disabled=locked;
 }
 function rebuild(){
  plans.clear();records.length=0;requests.length=0;
@@ -2343,10 +2349,10 @@ function applyData(data){
 function updatePeople(list){
  const next=[...new Set([...(list||[]),...tasks.flatMap(owners),...states.keys()])].filter(Boolean).sort((a,b)=>a.localeCompare(b,'ko'));
  people=next;
- if(!person){let stored='';try{stored=localStorage.getItem('metro-work-person')||'';}catch{}person=next.includes(stored)?stored:next.includes('설아')?'설아':next[0]||'';}
+ if(!person){let stored='';try{stored=localStorage.getItem('metro-work-person')||'';}catch{}person=next.includes(stored)?stored:'';}
  if(!next.includes(person)&&person)next.push(person);
  const filter=q('#md-reviewperson').value;
- q('#md-person').innerHTML=next.map(p=>`<option value="${esc(p)}">${esc(p)}</option>`).join('');q('#md-person').value=person;
+ q('#md-person').innerHTML='<option value="">본인 이름 선택</option>'+next.map(p=>`<option value="${esc(p)}">${esc(p)}</option>`).join('');q('#md-person').value=person;
  q('#md-reviewperson').innerHTML='<option value="">전체 팀원</option>'+next.map(p=>`<option value="${esc(p)}">${esc(p)}</option>`).join('');q('#md-reviewperson').value=next.includes(filter)?filter:'';
 }
 async function jsonRequest(body){
@@ -2356,7 +2362,7 @@ async function jsonRequest(body){
   const text=await response.text();let data;
   try{data=JSON.parse(text);}catch{throw new Error('데이터 대신 다른 화면을 받았어요. 웹 앱 배포 주소와 액세스 권한을 확인해주세요.');}
   if(!data.ok){const err=new Error(data.error||'시트 연결에 실패했어요.');err.definitive=true;throw err;}
-  if(!data.workVersion&&!(data.duplicate===true&&data.state&&body?.requestId))throw new Error('개인 작업 연결 코드가 배포되지 않았어요. 최신 코드의 웹 앱 주소를 확인해주세요.');
+  if((!data.workVersion||data.workVersion<2)&&!(data.duplicate===true&&data.state&&body?.requestId))throw new Error('비밀번호 없는 새 연결 코드를 Apps Script에 붙여넣고 기존 웹 앱을 새 버전으로 배포해주세요.');
   return data;
  }catch(err){if(err.name==='AbortError')throw new Error('응답을 기다리는 시간이 길어졌어요.');if(err instanceof TypeError)throw new Error('웹 앱에 접속하지 못했어요. 인터넷 연결과 웹 앱 배포 권한을 확인해주세요.');throw err;}
  finally{clearTimeout(timer);}
@@ -2365,8 +2371,9 @@ function requestId(){return typeof crypto!=='undefined'&&crypto.randomUUID?crypt
 async function mutate(action,fields={},onSuccess){
  if(busy||pendingWrite)return;
  const director=['review','return','request_handle'].includes(action);
- const body={action:'work_'+action,person,requestId:requestId(),...fields,...(director?{pass:adminPass}:{memberPass})};
- if(!(director?adminPass:memberPass)){status('먼저 비밀번호로 화면을 열어주세요.',true);return;}
+ const body={action:'work_'+action,person,requestId:requestId(),...fields,...(director?{pass:adminPass}:{})};
+ if(director&&!adminPass){status('먼저 관리 비밀번호로 디렉터 화면을 열어주세요.',true);return;}
+ if(!director&&(!person||loadedPerson!==person)){status('먼저 본인 이름을 선택해주세요.',true);return;}
  pendingWrite={body,onSuccess};await submitPending();
 }
 async function submitPending(){
@@ -2382,22 +2389,22 @@ async function submitPending(){
   if(err.definitive)pendingWrite=null;
   status(err.message+(pendingWrite?' 저장 여부가 아직 확인되지 않았으니 ‘저장 재시도’를 눌러주세요.':''),true);
   if(err.definitive&&/비밀번호/.test(err.message)){
-   if(pending.body.pass){adminPass='';directorLoaded=false;}else{memberPass='';loadedPerson='';}
+   if(pending.body.pass){adminPass='';directorLoaded=false;}else{loadedPerson='';}
   }
  }finally{busy=false;render();setDisabled();}
 }
 async function refresh(quiet=false){
  if(busy||pendingWrite||loading)return;
  if(quiet&&root.contains(document.activeElement)&&['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName))return;
- const initialRevision=revision,initialView=view;loading=true;if(!quiet)status('에픽 작업과 개인 기록을 불러오는 중…');
+ const initialRevision=revision,initialView=view;loading=true;if(!quiet)status('에픽 작업과 개인 기록을 불러오는 중…');setDisabled();
  try{
   let data;
   if(view==='director'&&adminPass){data=await jsonRequest({action:'work_director',pass:adminPass});}
-  else if(memberPass&&person){data=await jsonRequest({action:'work_read',person,memberPass});loadedPerson=person;}
-  else{data=await jsonRequest();if(data.ready===false)throw new Error('관리자시트에서 METRO_연결준비를 한 번 실행해주세요.');}
+  else if(person){const targetPerson=person;data=await jsonRequest({action:'work_read',person:targetPerson});if(person!==targetPerson)return;loadedPerson=targetPerson;}
+  else{data=await jsonRequest();applyData(data);if(person){const targetPerson=person;data=await jsonRequest({action:'work_read',person:targetPerson});if(person!==targetPerson)return;loadedPerson=targetPerson;}}
   if(initialRevision!==revision||initialView!==view)return;
   applyData(data);status('에픽시트 연결됨 · '+today+' · 1분마다 갱신');render();
- }catch(err){status(err.message,true);if(err.definitive&&/비밀번호/.test(err.message)){if(view==='director'){adminPass='';directorLoaded=false;}else{memberPass='';loadedPerson='';}render();}}
+ }catch(err){status(err.message,true);if(err.definitive&&/비밀번호/.test(err.message)){if(view==='director'){adminPass='';directorLoaded=false;}else{loadedPerson='';}render();}}
  finally{loading=false;setDisabled();}
 }
 const selectedToday=k=>plans.get(k)===today;
@@ -2414,13 +2421,14 @@ return `<article class="md-item"><div class="md-row"><h3>${esc(r.title)}</h3><sp
 function activity(p){const completed=records.filter(r=>r.person===p&&r.date===today&&!r.cancelled).length;const checked=Object.values(checkActivity).filter(a=>a.person===p&&a.date===today&&a.done).length;return {completed,checked,hasWork:completed>0||checked>0};}
 function reportStatus(p){const a=activity(p),written=!!dailyReports[today+'|'+p];return {a,written,label:written?'작성 완료':a.hasWork?'미작성':'작성 불필요',css:written?'md-done':a.hasWork?'md-reportmissing':'md-reportoptional'};}
 function render(){
-  q('#md-my').hidden=!memberPass||loadedPerson!==person;
-  q('#md-memberlogin').hidden=!!memberPass&&loadedPerson===person;
+  q('#md-my').hidden=!person||loadedPerson!==person;
+  q('#md-memberlogin').hidden=!!person&&loadedPerson===person;
+  q('#md-memberlogin p').textContent=person?'개인 기록을 불러오는 중이에요.':'오른쪽 위에서 본인 이름을 선택해주세요.';
   q('#md-director').hidden=!adminPass||!directorLoaded;
   q('#md-directorlogin').hidden=!!adminPass&&directorLoaded;
-  q('#md-logout').hidden=!memberPass;q('#md-adminlogout').hidden=!adminPass;
-  q('#md-subtitle').textContent=(person?person+'님, ':'')+'오늘 할 일을 골라보세요. · '+today;
-  q('#md-memberhint').textContent=memberPass?'작업은 관리자시트에 저장됩니다. 데일리 리포트 표시는 본인이 작성한 뒤 눌러주세요.':'';
+  q('#md-adminlogout').hidden=!adminPass;
+  q('#md-subtitle').textContent=(person?person+'님, 오늘 할 일을 골라보세요.':'본인 이름을 선택해서 작업을 확인하세요.')+' · '+today;
+  q('#md-memberhint').textContent=person?'작업은 관리자시트에 저장됩니다. 데일리 리포트 표시는 본인이 작성한 뒤 눌러주세요.':'';
 const ds=reportStatus(person);q('#md-dailyreport').innerHTML=`<div class="md-title"><h2>데일리 리포트 작성하기</h2><span class="md-tag ${ds.css}">${ds.label}</span></div><div class="md-actions"><span class="md-small">${ds.a.hasWork?'오늘 작업 기록이 있어요':'오늘 작업 기록 없음 · 작성 선택'}</span><button type="button" class="${ds.written?'':'md-primary'}" data-action="dailyreport">${ds.written?'작성 완료 표시 취소':'작성 완료로 표시'}</button></div>`;
 root.querySelectorAll('[data-tab]').forEach(b=>b.setAttribute('aria-selected',String(b.dataset.tab===tab)));
 const assigned=mine().filter(t=>!reported(t)),focus=assigned.filter(t=>selectedToday(pk(t))&&!reported(t)),myrecords=records.filter(r=>r.person===person&&!r.cancelled).slice().reverse();
@@ -2506,13 +2514,7 @@ q('#md-person').addEventListener('change',e=>{
  if(busy||pendingWrite)return;
  person=e.target.value;requestOpen=null;
  try{localStorage.setItem('metro-work-person',person);}catch{}
- loadedPerson='';render();if(memberPass)refresh();
-});
-q('#md-memberform').addEventListener('submit',async e=>{
- e.preventDefault();if(busy||loading||pendingWrite)return;if(!person){status('이름 목록을 불러온 뒤 본인 이름을 선택해주세요.',true);return;}
- const pin=q('#md-memberpin').value;busy=true;status('개인 기록을 불러오는 중…');setDisabled();
- try{const data=await jsonRequest({action:'work_read',person,memberPass:pin});memberPass=pin;loadedPerson=person;q('#md-memberpin').value='';applyData(data);status('내 작업 연결됨 · '+today);}
- catch(err){status(err.message,true);}finally{busy=false;render();}
+ loadedPerson='';render();refresh();
 });
 q('#md-adminform').addEventListener('submit',async e=>{
  e.preventDefault();if(busy||loading||pendingWrite)return;
@@ -2520,14 +2522,9 @@ q('#md-adminform').addEventListener('submit',async e=>{
  try{const data=await jsonRequest({action:'work_director',pass:pin});adminPass=pin;applyData(data);q('#md-adminpin').value='';status('디렉터 연결됨 · '+today);}
  catch(err){status(err.message,true);}finally{busy=false;render();}
 });
-q('#md-logout').addEventListener('click',()=>{
- if(busy||pendingWrite)return;
- memberPass='';loadedPerson='';Object.keys(dirtyNotes).forEach(k=>delete dirtyNotes[k]);
- if(!adminPass)states.clear();rebuild();render();status('내 작업을 잠갔어요.');
-});
 q('#md-adminlogout').addEventListener('click',()=>{
  if(busy||pendingWrite)return;adminPass='';directorLoaded=false;
- for(const p of states.keys())if(p!==person||!memberPass)states.delete(p);
+ for(const p of states.keys())if(p!==person)states.delete(p);
  rebuild();render();status('디렉터 화면을 잠갔어요.');
 });
 q('#md-retry').addEventListener('click',submitPending);
