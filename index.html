@@ -2346,9 +2346,14 @@ function applyData(data){
  if(data.state)states.set(data.state.person,data.state);
  rebuild();updatePeople(data.people);
 }
+function isMemberName(name){
+ const value=String(name||'').trim();
+ return !!value&&!/^(?:(?:개발|기획|아트|디자인|프로그래밍|사운드|운영)(?:팀)?|전체|전체팀원|공통|미정|없음|담당자|이름|TBD|Unassigned)$|^(?:배정전|미배정|담당미정|담당자미정)(?:$|[（(\\-_:：])/i.test(value.replace(/\s+/g,''));
+}
 function updatePeople(list){
- const next=[...new Set([...(list||[]),...tasks.flatMap(owners),...states.keys()])].filter(Boolean).sort((a,b)=>a.localeCompare(b,'ko'));
+ const next=[...new Set([...(list||[]),...tasks.flatMap(owners),...states.keys()])].filter(isMemberName).sort((a,b)=>a.localeCompare(b,'ko'));
  people=next;
+ if(person&&!isMemberName(person)){person='';loadedPerson='';try{localStorage.removeItem('metro-work-person');}catch{}}
  if(!person){let stored='';try{stored=localStorage.getItem('metro-work-person')||'';}catch{}person=next.includes(stored)?stored:'';}
  if(!next.includes(person)&&person)next.push(person);
  const filter=q('#md-reviewperson').value;
