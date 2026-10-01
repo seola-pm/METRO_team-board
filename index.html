@@ -458,7 +458,7 @@ nav .nav-label{padding:14px 14px 3px;font-size:11px;color:var(--muted);font-weig
 (() => {
   'use strict';
 
-  const VERSION = '2026-09-30-work-2';
+  const VERSION = '2026-10-01-work-3';
   const NEED_ADMIN_VERSION = 4;   // 이 홈페이지가 필요로 하는 관리용 코드(metro-admin.gs) 버전
   const C = window.METRO_CONFIG || {};
   const MAIN_URL = String(C.API_URL || '').trim();
@@ -1932,8 +1932,9 @@ nav .nav-label{padding:14px 14px 3px;font-size:11px;color:var(--muted);font-weig
     }).filter(o => pick(o, '이름'));
   }
 
+  const needsTeamData=()=>!['','#my'].includes(location.hash);
   async function load({ quiet = false } = {}) {
-    if (state.loading) return;
+    if (!needsTeamData() || state.loading) return;
     state.loading = true;
     if (!quiet) setSync('loading', '<span class="sync-word">불러오는 중</span>');
     try {
@@ -2291,7 +2292,7 @@ nav .nav-label{padding:14px 14px 3px;font-size:11px;color:var(--muted);font-weig
     document.addEventListener('keydown', e => { if (e.key === 'Escape') $$('.picker[open]').forEach(p => { p.open = false; }); });
     $('#passDialog').addEventListener('close', () => { if (passResolve) closePass(null); });
     $('#refreshBtn').addEventListener('click', () => load());
-    window.addEventListener('hashchange', route);
+    window.addEventListener('hashchange', () => {route();if(needsTeamData()&&(!state.lastSync||Date.now()-state.lastSync>60000))load({quiet:true});});
     document.addEventListener('visibilitychange', () => {
       if (!document.hidden && (!state.lastSync || Date.now() - state.lastSync > 15000)) load({ quiet: true });
     });
@@ -2299,7 +2300,8 @@ nav .nav-label{padding:14px 14px 3px;font-size:11px;color:var(--muted);font-weig
 
   bindEvents();
   renderAll();
-  load();
+  if(needsTeamData())load();
+  else setSync('ok','내 작업');
   setInterval(tick, 1000);
   setInterval(() => { if (!document.hidden && !isBusy()) load({ quiet: true }); }, REFRESH_MS);
 })();
@@ -2312,7 +2314,9 @@ const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 const seoulDay=()=>new Intl.DateTimeFormat('sv-SE',{timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
 let tasks=[],people=[],person='',tab='today',view='my',reviewTab='completed',today=seoulDay(),adminPass='',loadedPerson='',directorLoaded=false,busy=false,pendingWrite=null,loading=false,revision=0;
 const states=new Map(),plans=new Map(),records=[],notes={},checks={},checkDrafts={},requestDrafts={},requests=[],returnDrafts={},returnErrors={},dailyReports={},checkActivity={},dirtyNotes={};
-let requestOpen=null,returnOpen=null;
+let requestOpen=null,returnOpen=null,cachedPerson='';
+const workVisible=()=>['','#my','#director','#team'].includes(location.hash);
+try{person=localStorage.getItem('metro-work-person')||'';if(!isMemberName(person))person='';}catch{}
 const key=t=>t.id,pk=t=>person+'|'+key(t),valid=s=>/^\d{4}-\d{2}-\d{2}$/.test(s),owners=t=>t.owners.split(/[,、\n]/).map(x=>x.trim()),mine=()=>tasks.filter(t=>owners(t).includes(person)&&t.status!=='완료'),reported=t=>records.find(r=>r.person===person&&r.key===key(t)&&!r.cancelled&&!r.returned);
 function status(message,error=false){q('#md-syncmessage').textContent=message;q('#md-sync').dataset.error=String(error);q('#md-retry').hidden=!pendingWrite;}
 function setDisabled(){
@@ -2320,7 +2324,7 @@ function setDisabled(){
  root.setAttribute('aria-busy',String(busy));
  q('#md-person').disabled=locked||loading||!people.length;
  root.querySelectorAll('#md-my [data-action],#md-my input,#md-my textarea,#md-my select,#md-director [data-action],#md-director [data-check]').forEach(el=>{
-   el.disabled=locked||(el.dataset.action==='add'&&plans.get(person+'|'+el.dataset.key)===today);
+   el.disabled=locked||(el.closest('#md-my')&&loadedPerson!==person)||(el.dataset.action==='add'&&plans.get(person+'|'+el.dataset.key)===today);
  });
  q('#md-refresh').disabled=locked;q('#md-retry').disabled=busy;
  root.querySelectorAll('.work-login input,.work-login button').forEach(el=>el.disabled=busy||!!pendingWrite);
@@ -2345,6 +2349,7 @@ function applyData(data){
  if(Array.isArray(data.states)){states.clear();data.states.forEach(s=>states.set(s.person,s));directorLoaded=true;}
  if(data.state)states.set(data.state.person,data.state);
  rebuild();updatePeople(data.people);
+ if(data.state&&data.state.person===person){try{sessionStorage.setItem('metro-work-cache-v3',JSON.stringify({person:person,tasks:tasks,state:data.state,people:people,savedAt:Date.now()}));}catch{}}
 }
 function isMemberName(name){
  const value=String(name||'').trim();
@@ -2399,7 +2404,7 @@ async function submitPending(){
  }finally{busy=false;render();setDisabled();}
 }
 async function refresh(quiet=false){
- if(busy||pendingWrite||loading)return;
+ if(!workVisible()||busy||pendingWrite||loading)return;
  if(quiet&&root.contains(document.activeElement)&&['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName))return;
  const initialRevision=revision,initialView=view;loading=true;if(!quiet)status('에픽 작업과 개인 기록을 불러오는 중…');setDisabled();
  try{
@@ -2409,8 +2414,8 @@ async function refresh(quiet=false){
   else{data=await jsonRequest();applyData(data);if(person){const targetPerson=person;data=await jsonRequest({action:'work_read',person:targetPerson});if(person!==targetPerson)return;loadedPerson=targetPerson;}}
   if(initialRevision!==revision||initialView!==view)return;
   applyData(data);status('에픽시트 연결됨 · '+today+' · 1분마다 갱신');render();
- }catch(err){status(err.message,true);if(err.definitive&&/비밀번호/.test(err.message)){if(view==='director'){adminPass='';directorLoaded=false;}else{loadedPerson='';}render();}}
- finally{loading=false;setDisabled();}
+ }catch(err){status((loadedPerson===person||cachedPerson===person?'갱신 실패 · 마지막으로 받은 작업을 유지하고 있어요. ':'')+err.message,true);if(err.definitive&&/비밀번호/.test(err.message)){if(view==='director'){adminPass='';directorLoaded=false;}else{loadedPerson='';}render();}}
+ finally{loading=false;setDisabled();if(person&&loadedPerson!==person&&cachedPerson!==person)q('#md-memberlogin p').textContent='작업을 불러오지 못했어요. 위의 ‘작업 새로고침’을 눌러주세요.';}
 }
 const selectedToday=k=>plans.get(k)===today;
 const unfinishedLabel=k=>{const d=plans.get(k);if(!d||d>=today)return '';const previous=new Date(today+'T00:00:00Z');previous.setUTCDate(previous.getUTCDate()-1);return d===previous.toISOString().slice(0,10)?'어제 선택 · 미완료':d.slice(5).replace('-','/')+' 선택 · 미완료';};
@@ -2426,8 +2431,8 @@ return `<article class="md-item"><div class="md-row"><h3>${esc(r.title)}</h3><sp
 function activity(p){const completed=records.filter(r=>r.person===p&&r.date===today&&!r.cancelled).length;const checked=Object.values(checkActivity).filter(a=>a.person===p&&a.date===today&&a.done).length;return {completed,checked,hasWork:completed>0||checked>0};}
 function reportStatus(p){const a=activity(p),written=!!dailyReports[today+'|'+p];return {a,written,label:written?'작성 완료':a.hasWork?'미작성':'작성 불필요',css:written?'md-done':a.hasWork?'md-reportmissing':'md-reportoptional'};}
 function render(){
-  q('#md-my').hidden=!person||loadedPerson!==person;
-  q('#md-memberlogin').hidden=!!person&&loadedPerson===person;
+  q('#md-my').hidden=!person||(loadedPerson!==person&&cachedPerson!==person);
+  q('#md-memberlogin').hidden=!!person&&(loadedPerson===person||cachedPerson===person);
   q('#md-memberlogin p').textContent=person?'개인 기록을 불러오는 중이에요.':'오른쪽 위에서 본인 이름을 선택해주세요.';
   q('#md-director').hidden=!adminPass||!directorLoaded;
   q('#md-directorlogin').hidden=!!adminPass&&directorLoaded;
@@ -2534,12 +2539,13 @@ q('#md-adminlogout').addEventListener('click',()=>{
 });
 q('#md-retry').addEventListener('click',submitPending);
 q('#md-refresh').addEventListener('click',()=>refresh());
-document.getElementById('refreshBtn').addEventListener('click',()=>refresh());
+document.getElementById('refreshBtn').addEventListener('click',()=>{if(workVisible())refresh();});
 window.addEventListener('metro:route',e=>{const next=e.detail.view==='director'?'director':'my';const changed=next!==view;view=next;if(e.detail.team)reviewTab='team';render();if(changed)refresh(true);});
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)refresh(true);});
 window.addEventListener('beforeunload',e=>{if(pendingWrite||Object.keys(dirtyNotes).length){e.preventDefault();e.returnValue='';}});
 setInterval(()=>{if(!document.hidden)refresh(true);},60000);
-view=(location.hash==='#director'||location.hash==='#team')?'director':'my';render();refresh();
+try{const cached=JSON.parse(sessionStorage.getItem('metro-work-cache-v3')||'null');if(cached&&person&&cached.person===person&&Date.now()-cached.savedAt<86400000){applyData({tasks:cached.tasks,state:cached.state,people:cached.people});cachedPerson=person;status('지난 작업을 먼저 표시하고 최신 내용을 확인하고 있어요.');}}catch{}
+view=(location.hash==='#director'||location.hash==='#team')?'director':'my';render();setDisabled();if(workVisible())refresh();
 })();
 
 </script>
